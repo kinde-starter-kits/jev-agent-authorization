@@ -2,6 +2,7 @@ import {v} from 'convex/values';
 import {internalMutation} from './_generated/server';
 import {
   decisionStatus,
+  intentSource,
   jevRecord,
   judgeRecord,
   kindeCheck,
@@ -23,6 +24,7 @@ export const begin = internalMutation({
     argsJson: v.string(),
     kinde: kindeCheck,
     reason: v.optional(v.string()),
+    intentSource: v.optional(intentSource),
     jev: v.optional(jevRecord),
     judge: v.optional(judgeRecord),
     verdict,

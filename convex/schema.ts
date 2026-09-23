@@ -49,6 +49,12 @@ export const kindeCheck = v.object({
   flagEnabled: v.optional(v.boolean())
 });
 
+export const intentSource = v.union(
+  v.literal('verified'),
+  v.literal('claimed'),
+  v.literal('none')
+);
+
 export const jevRecord = v.object({
   model: v.string(),
   ms: v.number(),
@@ -162,6 +168,7 @@ export default defineSchema({
     argsJson: v.string(),
     kinde: kindeCheck,
     reason: v.optional(v.string()),
+    intentSource: v.optional(intentSource),
     jev: v.optional(jevRecord),
     judge: v.optional(judgeRecord),
     verdict,
@@ -205,5 +212,41 @@ export default defineSchema({
     errorCode: v.optional(v.string())
   })
     .index('by_decisionId', ['decisionId'])
-    .index('by_status_and_expiresAt', ['status', 'expiresAt'])
+    .index('by_status_and_expiresAt', ['status', 'expiresAt']),
+
+  runs: defineTable({
+    sub: v.string(),
+    message: v.string(),
+    status: v.union(
+      v.literal('running'),
+      v.literal('done'),
+      v.literal('held'),
+      v.literal('refused'),
+      v.literal('failed')
+    ),
+    model: v.string(),
+    turns: v.number(),
+    costUsd: v.number(),
+    finalText: v.optional(v.string()),
+    errorCode: v.optional(v.string()),
+    endedAt: v.optional(v.number())
+  })
+    .index('by_sub', ['sub'])
+    .index('by_sub_and_status', ['sub', 'status']),
+
+  runSteps: defineTable({
+    runId: v.id('runs'),
+    index: v.number(),
+    kind: v.union(v.literal('assistant'), v.literal('tool')),
+    text: v.optional(v.string()),
+    tool: v.optional(v.string()),
+    argsJson: v.optional(v.string()),
+    ok: v.optional(v.boolean()),
+    httpStatus: v.optional(v.number()),
+    code: v.optional(v.string()),
+    decisionId: v.optional(v.id('decisions')),
+    heldCallId: v.optional(v.id('heldCalls')),
+    approvalUrl: v.optional(v.string()),
+    resultPreview: v.optional(v.string())
+  }).index('by_runId_and_index', ['runId', 'index'])
 });

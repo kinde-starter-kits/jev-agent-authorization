@@ -12,7 +12,9 @@ const app = defineApp({
     JEV_MODEL: v.optional(v.string()),
     LLM_JUDGE_MODEL: v.optional(v.string()),
     KINDE_WEB_CLIENT_ID: v.optional(v.string()),
-    GATEHOUSE_APP_URL: v.optional(v.string())
+    GATEHOUSE_APP_URL: v.optional(v.string()),
+    GATEHOUSE_MCP_URL: v.optional(v.string()),
+    AGENT_MODEL: v.optional(v.string())
   }
 });
 
