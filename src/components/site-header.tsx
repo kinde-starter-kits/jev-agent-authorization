@@ -4,7 +4,8 @@ import Link from 'next/link';
 
 const NAV = [
   {href: '/', label: 'Ledger'},
-  {href: '/console', label: 'Console'}
+  {href: '/console', label: 'Console'},
+  {href: '/playground', label: 'Playground'}
 ];
 
 function GateMark() {
@@ -30,13 +31,16 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-line bg-paper/80 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4 whitespace-nowrap sm:gap-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4 whitespace-nowrap sm:gap-6">
+        <Link
+          href="/"
+          aria-label="Jev Gatehouse home"
+          className="flex items-center gap-2 font-semibold"
+        >
           <GateMark />
           <span className="hidden sm:inline">Jev Gatehouse</span>
-          <span className="sm:hidden">Gatehouse</span>
         </Link>
-        <nav className="flex flex-1 items-center gap-4 text-sm text-muted">
+        <nav className="flex flex-1 items-center gap-3 text-sm text-muted sm:gap-4">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href} className="hover:text-ink">
               {item.label}
