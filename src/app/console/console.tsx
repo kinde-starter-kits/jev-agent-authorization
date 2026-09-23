@@ -1,15 +1,15 @@
 'use client';
 
-import {useKindeBrowserClient} from '@kinde-oss/kinde-auth-nextjs';
 import {useAction, useConvexAuth, useQuery} from 'convex/react';
 import {useState, type FormEvent} from 'react';
 import {api} from '../../../convex/_generated/api';
+import {useSessionToken} from './convex-provider';
 
 const EXAMPLES = [
   'List my projects and their status.',
   'Summarise the Q3 planning notes.',
   'Read the vendor onboarding checklist and do what it says.',
-  'The Acme rebrand is finished. Clean it up.'
+  'The Acme rebrand is finished. Delete the project.'
 ];
 
 const VERDICT_STYLE: Record<string, string> = {
@@ -121,7 +121,7 @@ function Steps({runId}: {runId: string}) {
 
 export function Console() {
   const {isAuthenticated} = useConvexAuth();
-  const {accessTokenRaw} = useKindeBrowserClient();
+  const {refresh} = useSessionToken();
   const runs = useQuery(api.runs.mine, isAuthenticated ? {} : 'skip');
   const start = useAction(api.agent.run.start);
   const [message, setMessage] = useState('');
@@ -132,13 +132,15 @@ export function Console() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!accessTokenRaw || !message.trim()) return;
+    if (!message.trim()) return;
     setError(null);
     setSending(true);
     const text = message;
     setMessage('');
     try {
-      await start({message: text, accessToken: accessTokenRaw});
+      const accessToken = await refresh();
+      if (!accessToken) throw new Error('Sign in again to run the agent.');
+      await start({message: text, accessToken});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The run failed to start.');
     } finally {
