@@ -10,7 +10,9 @@ http.route({
   path: '/api/openapi.json',
   method: 'GET',
   handler: httpAction(async () =>
-    Response.json(buildOpenApi(env.CONVEX_SITE_URL))
+    Response.json(buildOpenApi(env.CONVEX_SITE_URL), {
+      headers: {'Access-Control-Allow-Origin': '*'}
+    })
   )
 });
 
