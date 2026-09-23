@@ -1,6 +1,6 @@
 import {describe, expect, test} from 'vitest';
 import {buildOpenApi} from './openapi';
-import {matchOperation, operations} from './operations';
+import {matchOperation, operations, reasonLocation} from './operations';
 
 describe('operations', () => {
   test('operation ids are unique', () => {
@@ -8,13 +8,21 @@ describe('operations', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  test('every write requires a reason and every read has no body', () => {
+  test('reads take no reason, deletes take it in the query, other writes in the body', () => {
     for (const op of operations) {
+      const location = reasonLocation(op);
       if (op.method === 'GET') {
+        expect(location, op.operationId).toBeNull();
         expect(op.body, op.operationId).toBeUndefined();
         expect(op.run.kind, op.operationId).toBe('query');
+      } else if (op.method === 'DELETE') {
+        expect(location, op.operationId).toBe('query');
+        expect(op.body, op.operationId).toBeUndefined();
+        expect(op.run.kind, op.operationId).toBe('mutation');
       } else {
-        expect(op.body?.required, op.operationId).toContain('reason');
+        expect(location, op.operationId).toBe('body');
+        expect(op.body?.properties.reason, op.operationId).toBeDefined();
+        expect(op.body?.required, op.operationId).not.toContain('reason');
         expect(op.run.kind, op.operationId).toBe('mutation');
       }
     }
@@ -68,5 +76,19 @@ describe('buildOpenApi', () => {
       operations.map((o) => o.operationId).sort()
     );
     expect(spec.servers[0]?.url).toBe('https://example.convex.site');
+  });
+});
+
+describe('buildOpenApi reason parameter', () => {
+  test('documents the reason as an optional query parameter on deletes', () => {
+    const spec = buildOpenApi('https://example.convex.site');
+    const entry = spec.paths['/api/v1/projects/{slug}']?.delete as {
+      parameters: Array<{name: string; in: string; required: boolean}>;
+      requestBody?: unknown;
+    };
+    expect(entry.requestBody).toBeUndefined();
+    expect(entry.parameters).toContainEqual(
+      expect.objectContaining({name: 'reason', in: 'query', required: false})
+    );
   });
 });
