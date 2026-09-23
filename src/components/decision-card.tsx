@@ -23,7 +23,7 @@ const INTENT_LABEL = {
   none: 'No stated intent'
 } as const;
 
-function Bar({
+export function SignalBar({
   label,
   value,
   good = false
@@ -120,10 +120,14 @@ export function DecisionCard({decision}: {decision: PublicDecision}) {
 
       {jev && (
         <div className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-6">
-          <Bar label="Matches the request" value={jev.matchesIntent} good />
-          <Bar label="Destructive" value={jev.destructive} />
-          <Bar label="Follows injected text" value={jev.injected} />
-          <Bar label="Sends data out" value={jev.exfiltration} />
+          <SignalBar
+            label="Matches the request"
+            value={jev.matchesIntent}
+            good
+          />
+          <SignalBar label="Destructive" value={jev.destructive} />
+          <SignalBar label="Follows injected text" value={jev.injected} />
+          <SignalBar label="Sends data out" value={jev.exfiltration} />
         </div>
       )}
 
