@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Placeholders so the build can run. CI makes no calls to Kinde or Convex.
+      NEXT_PUBLIC_CONVEX_URL: https://placeholder.convex.cloud
+      NEXT_PUBLIC_CONVEX_SITE_URL: https://placeholder.convex.site
+      KINDE_CLIENT_ID: placeholder
+      KINDE_CLIENT_SECRET: placeholder
+      KINDE_ISSUER_URL: https://placeholder.kinde.com
+      KINDE_SITE_URL: http://localhost:3000
+      KINDE_POST_LOGOUT_REDIRECT_URL: http://localhost:3000
+      KINDE_POST_LOGIN_REDIRECT_URL: http://localhost:3000
+      KINDE_AUDIENCE: https://gatehouse.api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
