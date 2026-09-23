@@ -1,5 +1,4 @@
 import type {Operation} from '../api/operations';
-import type {KindeClaims} from './token';
 
 export const POLICY_VERSION = '2026-09-23.1';
 
@@ -14,9 +13,14 @@ export type KindeCheck = {
 
 export type Decision = {verdict: Verdict; reasonCode: string};
 
+export type Entitlements = {
+  permissions: string[];
+  featureFlags: Record<string, boolean>;
+};
+
 export function checkKinde(
   operation: Operation,
-  claims: KindeClaims
+  claims: Entitlements
 ): KindeCheck {
   const flag = operation.flag ?? null;
   return {

@@ -2,9 +2,24 @@ import {ConvexError} from 'convex/values';
 import {internal} from '../_generated/api';
 import type {Id} from '../_generated/dataModel';
 import {env, httpAction, type ActionCtx} from '../_generated/server';
-import {matchOperation, type Operation} from '../api/operations';
+import {
+  matchOperation,
+  reasonLocation,
+  type Operation
+} from '../api/operations';
+import {
+  accessFromToken,
+  fetchOrgAccess,
+  type Access,
+  type AccessFailure
+} from './access';
 import {checkKinde, decide, POLICY_VERSION} from './policy';
-import {bearerToken, remoteJwks, verifyKindeToken} from './token';
+import {
+  bearerToken,
+  remoteJwks,
+  verifyKindeToken,
+  type KindeClaims
+} from './token';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_LOGGED_STRING = 500;
@@ -43,14 +58,8 @@ async function readBody(
   operation: Operation
 ): Promise<{ok: true; body: JsonObject} | {ok: false; message: string}> {
   if (!operation.body) return {ok: true, body: {}};
-  const type = request.headers.get('content-type') ?? '';
-  if (!type.toLowerCase().includes('application/json')) {
-    return {
-      ok: false,
-      message: 'Send a JSON body with content-type application/json.'
-    };
-  }
   const text = await request.text();
+  if (text.trim().length === 0) return {ok: true, body: {}};
   if (text.length > MAX_BODY_BYTES) {
     return {ok: false, message: 'The request body is too large.'};
   }
@@ -68,6 +77,57 @@ async function readBody(
     return {ok: false, message: 'The request body contains a reserved field.'};
   }
   return {ok: true, body};
+}
+
+function statedReason(operation: Operation, url: URL, body: JsonObject) {
+  const location = reasonLocation(operation);
+  const raw =
+    location === 'query'
+      ? url.searchParams.get('reason')
+      : location === 'body'
+        ? body.reason
+        : null;
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed.slice(0, MAX_LOGGED_STRING) : undefined;
+}
+
+async function resolveAccess(
+  ctx: ActionCtx,
+  claims: KindeClaims,
+  orgCode: string
+): Promise<Access | AccessFailure> {
+  const fromToken = accessFromToken(claims, orgCode);
+  if (fromToken !== null) return fromToken;
+
+  const cached = await ctx.runQuery(internal.kindeAccess.get, {
+    sub: claims.sub,
+    orgCode,
+    now: Date.now()
+  });
+  if (cached) return {orgCode, ...cached, source: 'kinde_api'};
+
+  const clientId = env.KINDE_M2M_CLIENT_ID;
+  const clientSecret = env.KINDE_M2M_CLIENT_SECRET;
+  const issuer = env.KINDE_ISSUER_URL;
+  if (!clientId || !clientSecret || !issuer) return 'kinde_not_configured';
+
+  try {
+    const access = await fetchOrgAccess(
+      {issuer, clientId, clientSecret},
+      orgCode,
+      claims.sub
+    );
+    await ctx.runMutation(internal.kindeAccess.put, {
+      sub: claims.sub,
+      orgCode,
+      permissions: access.permissions,
+      featureFlags: access.featureFlags
+    });
+    return access;
+  } catch {
+    return 'kinde_unavailable';
+  }
 }
 
 function argsForLog(args: JsonObject) {
@@ -132,7 +192,8 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
 
   const issuer = env.KINDE_ISSUER_URL;
   const audience = env.GATEHOUSE_AUDIENCE;
-  if (!issuer || !audience) {
+  const orgCode = env.GATEHOUSE_ORG_CODE;
+  if (!issuer || !audience || !orgCode) {
     return errorResponse(
       503,
       'guard_not_configured',
@@ -167,10 +228,24 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
 
   const body = await readBody(request, operation);
   if (!body.ok) return errorResponse(400, 'invalid_body', body.message);
+  const reason = statedReason(operation, url, body.body);
   const args: JsonObject = {...body.body, ...params};
+  if (reasonLocation(operation) === 'query' && reason) args.reason = reason;
 
-  const kinde = checkKinde(operation, claims);
-  const decision = decide(operation, kinde);
+  const access = await resolveAccess(ctx, claims, orgCode);
+  const kinde =
+    typeof access === 'string'
+      ? {
+          permission: operation.permission,
+          permissionGranted: false,
+          flag: operation.flag ?? null,
+          flagEnabled: null
+        }
+      : checkKinde(operation, access);
+  const decision =
+    typeof access === 'string'
+      ? {verdict: 'deny' as const, reasonCode: access}
+      : decide(operation, kinde);
 
   let recorded: {decisionId: Id<'decisions'>; workspaceId: Id<'workspaces'>};
   try {
@@ -182,7 +257,10 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       method: operation.method,
       path: url.pathname,
       argsJson: argsForLog(args),
+      reason,
       kinde: {
+        orgCode: typeof access === 'string' ? undefined : access.orgCode,
+        source: typeof access === 'string' ? undefined : access.source,
         permission: kinde.permission,
         permissionGranted: kinde.permissionGranted,
         flag: kinde.flag ?? undefined,

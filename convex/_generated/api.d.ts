@@ -10,10 +10,12 @@
 
 import type * as api_openapi from "../api/openapi.js";
 import type * as api_operations from "../api/operations.js";
+import type * as guard_access from "../guard/access.js";
 import type * as guard_handler from "../guard/handler.js";
 import type * as guard_policy from "../guard/policy.js";
 import type * as guard_token from "../guard/token.js";
 import type * as http from "../http.js";
+import type * as kindeAccess from "../kindeAccess.js";
 import type * as ledger from "../ledger.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_seedData from "../lib/seedData.js";
@@ -33,10 +35,12 @@ import type {
 declare const fullApi: ApiFromModules<{
   "api/openapi": typeof api_openapi;
   "api/operations": typeof api_operations;
+  "guard/access": typeof guard_access;
   "guard/handler": typeof guard_handler;
   "guard/policy": typeof guard_policy;
   "guard/token": typeof guard_token;
   http: typeof http;
+  kindeAccess: typeof kindeAccess;
   ledger: typeof ledger;
   "lib/errors": typeof lib_errors;
   "lib/seedData": typeof lib_seedData;

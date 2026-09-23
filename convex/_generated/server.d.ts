@@ -31,7 +31,10 @@ type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
   readonly GATEHOUSE_AUDIENCE: string | undefined;
+  readonly GATEHOUSE_ORG_CODE: string | undefined;
   readonly KINDE_ISSUER_URL: string | undefined;
+  readonly KINDE_M2M_CLIENT_ID: string | undefined;
+  readonly KINDE_M2M_CLIENT_SECRET: string | undefined;
 };
 
 /**
