@@ -7,6 +7,28 @@ export const memberRole = v.union(
   v.literal('admin')
 );
 
+export const verdict = v.union(
+  v.literal('allow'),
+  v.literal('step_up'),
+  v.literal('deny')
+);
+
+export const decisionStatus = v.union(
+  v.literal('pending'),
+  v.literal('executed'),
+  v.literal('failed'),
+  v.literal('refused')
+);
+
+export const tier = v.union(
+  v.literal('read'),
+  v.literal('write'),
+  v.literal('money'),
+  v.literal('access'),
+  v.literal('destructive'),
+  v.literal('exfil')
+);
+
 export default defineSchema({
   workspaces: defineTable({
     ownerSub: v.string(),
@@ -85,5 +107,33 @@ export default defineSchema({
     company: v.optional(v.string()),
     recordCount: v.number(),
     createdBySub: v.string()
-  }).index('by_workspaceId', ['workspaceId'])
+  }).index('by_workspaceId', ['workspaceId']),
+
+  decisions: defineTable({
+    workspaceId: v.id('workspaces'),
+    sub: v.string(),
+    clientId: v.optional(v.string()),
+    operationId: v.string(),
+    tier,
+    method: v.string(),
+    path: v.string(),
+    argsJson: v.string(),
+    kinde: v.object({
+      permission: v.string(),
+      permissionGranted: v.boolean(),
+      flag: v.optional(v.string()),
+      flagEnabled: v.optional(v.boolean())
+    }),
+    verdict,
+    reasonCode: v.string(),
+    policyVersion: v.string(),
+    status: decisionStatus,
+    errorCode: v.optional(v.string()),
+    latency: v.object({
+      guardMs: v.number(),
+      operationMs: v.optional(v.number())
+    })
+  })
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_sub', ['sub'])
 });
