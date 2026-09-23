@@ -2,6 +2,8 @@
 
 A starter kit that checks every AI agent tool call before it runs. Kinde checks who the agent acts for and what that user can do. Jev, the System One model from TypeSafe AI, judges each call in about 200 ms. Policy code in the app decides: allow the call, ask the user to approve it, or stop it.
 
+**Live demo:** [jev-gatehouse.vercel.app](https://jev-gatehouse.vercel.app)
+
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com)
 
 ![Jev Gatehouse: the live ledger, with the stats block and the gate](docs/hero.png)

@@ -53,3 +53,5 @@ skills-lock.json
 convex/_generated/ai/
 .local/
 smoke-results.json
+.vercel
+.env*
