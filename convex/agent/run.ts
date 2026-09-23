@@ -1,4 +1,5 @@
 import {v} from 'convex/values';
+import {userError} from '../lib/errors';
 import {internal} from '../_generated/api';
 import type {Id} from '../_generated/dataModel';
 import {action, env} from '../_generated/server';
@@ -14,10 +15,14 @@ export const start = action({
     const {sub, mcpUrl} = await openAgentSession(ctx, accessToken);
     const text = message.trim();
     if (text.length === 0 || text.length > MAX_MESSAGE) {
-      throw new Error(`Write a request of 1 to ${MAX_MESSAGE} characters.`);
+      throw userError(
+        'invalid_message',
+        `Write a request of 1 to ${MAX_MESSAGE} characters.`
+      );
     }
     const apiKey = env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error('The agent is not configured.');
+    if (!apiKey)
+      throw userError('not_configured', 'The agent is not configured.');
 
     const model = env.AGENT_MODEL ?? DEFAULT_AGENT_MODEL;
     const runId: Id<'runs'> = await ctx.runMutation(internal.runs.create, {

@@ -1,4 +1,5 @@
 import {v} from 'convex/values';
+import {userError} from '../lib/errors';
 import {internal} from '../_generated/api';
 import type {Id} from '../_generated/dataModel';
 import {action, query} from '../_generated/server';
@@ -41,7 +42,7 @@ export const run = action({
   returns: v.id('runs'),
   handler: async (ctx, {scenarioId, accessToken}): Promise<Id<'runs'>> => {
     const scenario = scenarioById(scenarioId);
-    if (!scenario) throw new Error('Unknown scenario.');
+    if (!scenario) throw userError('not_found', 'Unknown scenario.');
     const {sub, mcpUrl} = await openAgentSession(ctx, accessToken);
 
     // The run carries the user request, so the guard sees it as verified intent.

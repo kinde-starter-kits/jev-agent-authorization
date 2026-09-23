@@ -1,3 +1,4 @@
+import {userError} from '../lib/errors';
 import {internal} from '../_generated/api';
 import type {Id} from '../_generated/dataModel';
 import {env, type ActionCtx} from '../_generated/server';
@@ -12,13 +13,14 @@ export const MAX_MESSAGE = 1000;
  */
 export async function openAgentSession(ctx: ActionCtx, accessToken: string) {
   const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error('Sign in to run the agent.');
+  if (!identity)
+    throw userError('unauthenticated', 'Sign in to run the agent.');
 
   const issuer = env.KINDE_ISSUER_URL;
   const audience = env.GATEHOUSE_AUDIENCE;
   const mcpUrl = env.GATEHOUSE_MCP_URL;
   if (!issuer || !audience || !mcpUrl)
-    throw new Error('The agent is not configured.');
+    throw userError('not_configured', 'The agent is not configured.');
 
   const token = await verifyKindeToken(accessToken, {
     issuer,
@@ -26,7 +28,7 @@ export async function openAgentSession(ctx: ActionCtx, accessToken: string) {
     jwks: remoteJwks(issuer)
   });
   if (!token.ok || token.claims.sub !== identity.subject) {
-    throw new Error('The access token does not belong to the signed-in user.');
+    throw userError('token_mismatch', 'Your session changed. Sign in again.');
   }
   const rate = await ctx.runMutation(internal.rateLimit.hit, {
     bucket: 'run',
@@ -35,7 +37,8 @@ export async function openAgentSession(ctx: ActionCtx, accessToken: string) {
   });
   if (!rate.ok) {
     const minutes = Math.ceil(rate.retryAfterMs / 60_000);
-    throw new Error(
+    throw userError(
+      'rate_limited',
       `You started too many runs. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
     );
   }
