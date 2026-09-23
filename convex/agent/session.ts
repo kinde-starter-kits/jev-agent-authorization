@@ -28,6 +28,17 @@ export async function openAgentSession(ctx: ActionCtx, accessToken: string) {
   if (!token.ok || token.claims.sub !== identity.subject) {
     throw new Error('The access token does not belong to the signed-in user.');
   }
+  const rate = await ctx.runMutation(internal.rateLimit.hit, {
+    bucket: 'run',
+    sub: identity.subject,
+    now: Date.now()
+  });
+  if (!rate.ok) {
+    const minutes = Math.ceil(rate.retryAfterMs / 60_000);
+    throw new Error(
+      `You started too many runs. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
+    );
+  }
   return {sub: identity.subject, mcpUrl};
 }
 

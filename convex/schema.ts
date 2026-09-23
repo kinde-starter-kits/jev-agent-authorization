@@ -239,6 +239,12 @@ export default defineSchema({
     actual: v.boolean()
   }).index('by_runId', ['runId']),
 
+  rateLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    count: v.number()
+  }).index('by_key', ['key']),
+
   kindeAccessCache: defineTable({
     sub: v.string(),
     orgCode: v.string(),

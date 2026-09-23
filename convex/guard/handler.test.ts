@@ -152,6 +152,25 @@ describe('token and identity checks', () => {
     expect(await decisions(t)).toHaveLength(0);
   });
 
+  test('rate-limits a user before any Kinde or Jev work', async () => {
+    const t = convexTest(schema, modules);
+    const token = await orgToken(READ);
+    const sub = 'kp_user_a';
+    await t.run(async (ctx) => {
+      await ctx.db.insert('rateLimits', {
+        key: `api:${sub}`,
+        windowStart: Date.now(),
+        count: 10_000
+      });
+    });
+    const response = await t.fetch('/api/v1/projects', {
+      headers: {authorization: `Bearer ${token}`}
+    });
+    expect(response.status).toBe(429);
+    expect(Number(response.headers.get('retry-after'))).toBeGreaterThan(0);
+    expect(await decisions(t)).toHaveLength(0);
+  });
+
   test('returns 404 for an unknown route', async () => {
     const t = convexTest(schema, modules);
     const {status} = await call(t, 'GET', '/api/v1/nothing');
