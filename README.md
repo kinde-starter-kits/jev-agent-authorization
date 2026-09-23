@@ -4,7 +4,7 @@ A starter kit that checks every AI agent tool call before it runs. Kinde checks 
 
 **Live demo:** [jev-gatehouse.vercel.app](https://jev-gatehouse.vercel.app)
 
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com) [![Jev by TypeSafe AI](https://img.shields.io/badge/Jev-TypeSafe%20AI-eee?style=flat-square)](https://askjev.ai) [![Convex](https://img.shields.io/badge/Convex-Docs-eee?style=flat-square)](https://docs.convex.dev)
 
 ![Jev Gatehouse: the live ledger, with the stats block and the gate](docs/hero.png)
 
