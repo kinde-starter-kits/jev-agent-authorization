@@ -51,4 +51,5 @@ scripts/jev-smoke.mjs
 .claude/
 skills-lock.json
 convex/_generated/ai/
+.local/
 smoke-results.json
