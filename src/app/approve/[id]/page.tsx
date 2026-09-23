@@ -34,9 +34,7 @@ const STATUS_TEXT: Record<HeldCall['status'], string> = {
 function Shell({children}: {children: ReactNode}) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center gap-6 px-4 py-12">
-      <p className="text-sm font-medium tracking-wide text-neutral-500 uppercase">
-        Jev Gatehouse
-      </p>
+      <p className="font-mono text-xs text-muted">Jev Gatehouse · approval</p>
       {children}
     </main>
   );
@@ -45,14 +43,18 @@ function Shell({children}: {children: ReactNode}) {
 function FreshSignIn({id, message}: {id: string; message: string}) {
   return (
     <Shell>
-      <h1 className="text-3xl font-semibold tracking-tight">
+      <h1 className="font-display text-4xl leading-none font-extrabold tracking-tight">
         Confirm it is you
       </h1>
-      <p className="text-neutral-600">{message}</p>
+      <p className="text-muted">{message}</p>
+      <p className="text-sm text-muted">
+        Kinde asks you to sign in again, so the approval comes from you, now. A
+        token the agent holds cannot approve its own call.
+      </p>
       <LoginLink
         postLoginRedirectURL={`/approve/${id}`}
         authUrlParams={{prompt: 'login', max_age: '0'}}
-        className="w-fit rounded-md bg-neutral-900 px-4 py-2 font-medium text-white"
+        className="w-fit rounded-md bg-ink px-4 py-2 font-medium text-paper"
       >
         Sign in again
       </LoginLink>
@@ -63,7 +65,7 @@ function FreshSignIn({id, message}: {id: string; message: string}) {
 function Percent({label, value}: {label: string; value: number}) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <span className="text-neutral-600">{label}</span>
+      <span className="text-muted">{label}</span>
       <span className="font-mono">{Math.round(value * 100)}%</span>
     </div>
   );
@@ -97,10 +99,10 @@ export default async function ApprovePage({
   if (!held.ok) {
     return (
       <Shell>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-display text-4xl leading-none font-extrabold tracking-tight">
           Held call not found
         </h1>
-        <p className="text-neutral-600">
+        <p className="text-muted">
           There is no held call with this link for your account.
         </p>
       </Shell>
@@ -123,51 +125,53 @@ export default async function ApprovePage({
   return (
     <Shell>
       <div className="flex flex-col gap-2">
-        <span className="w-fit rounded-full bg-neutral-100 px-3 py-1 text-sm">
+        <span className="w-fit rounded-full bg-track px-3 py-1 text-sm">
           {STATUS_TEXT[call.status]}
         </span>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-display text-4xl leading-none font-extrabold tracking-tight">
           {call.operation.summary}
         </h1>
-        <p className="text-neutral-600">{call.operation.effect}</p>
+        <p className="text-muted">{call.operation.effect}</p>
       </div>
 
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="rounded-md border border-deny/40 bg-deny-soft p-3 text-sm text-deny"
         >
           {ERROR_TEXT[error] ?? 'The request failed.'}
         </p>
       )}
       {done === 'approve' && call.status === 'executed' && (
-        <p className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+        <p className="rounded-md border border-allow/40 bg-allow-soft p-3 text-sm text-allow">
           The call ran exactly as held. You signed in {call.authAgeSeconds}{' '}
           seconds before you approved it.
         </p>
       )}
 
-      <section className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4">
-        <h2 className="text-sm font-medium text-neutral-500">What will run</h2>
+      <section className="flex flex-col gap-2 rounded-lg border border-line bg-card p-4">
+        <h2 className="text-sm font-medium text-muted">
+          {call.status === 'pending' ? 'What will run' : 'The call'}
+        </h2>
         <dl className="flex flex-col gap-1 font-mono text-sm">
           {args.map(([key, value]) => (
             <div key={key} className="flex gap-2">
-              <dt className="text-neutral-500">{key}</dt>
+              <dt className="text-muted">{key}</dt>
               <dd className="break-all">
                 {typeof value === 'string' ? value : JSON.stringify(value)}
               </dd>
             </div>
           ))}
         </dl>
-        <h2 className="mt-2 text-sm font-medium text-neutral-500">
+        <h2 className="mt-2 text-sm font-medium text-muted">
           Reason the agent gave
         </h2>
         <p className="text-sm">{call.reason ?? 'The agent gave no reason.'}</p>
       </section>
 
       {call.jev && (
-        <section className="flex flex-col gap-1 rounded-lg border border-neutral-200 p-4">
-          <h2 className="mb-1 text-sm font-medium text-neutral-500">
+        <section className="flex flex-col gap-1 rounded-lg border border-line bg-card p-4">
+          <h2 className="mb-1 text-sm font-medium text-muted">
             What Jev saw ({call.jev.ms} ms)
           </h2>
           <Percent label="Matches the reason" value={call.jev.matchesIntent} />
@@ -185,7 +189,7 @@ export default async function ApprovePage({
           <form action={approveHeld.bind(null, id)}>
             <button
               type="submit"
-              className="rounded-md bg-neutral-900 px-4 py-2 font-medium text-white"
+              className="rounded-md bg-ink px-4 py-2 font-medium text-paper"
             >
               Approve and run
             </button>
@@ -193,7 +197,7 @@ export default async function ApprovePage({
           <form action={denyHeld.bind(null, id)}>
             <button
               type="submit"
-              className="rounded-md border border-neutral-300 px-4 py-2 font-medium"
+              className="rounded-md border border-line px-4 py-2 font-medium"
             >
               Deny
             </button>

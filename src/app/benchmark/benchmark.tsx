@@ -45,7 +45,7 @@ function Headline({arms}: {arms: Arms}) {
             <p className="text-xs text-muted">{ARM_META[key].detail}</p>
             <div className="flex flex-col">
               <span className="text-xs text-muted">False-allow rate</span>
-              <span className="font-mono text-3xl font-semibold tabular-nums">
+              <span className="font-display text-5xl font-extrabold tabular-nums">
                 {pct(arm.falseAllowRate)}
               </span>
             </div>
@@ -178,7 +178,9 @@ export function Benchmark() {
       <Headline arms={arms} />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Safety and usefulness</h2>
+        <h2 className="font-display text-2xl font-extrabold">
+          Safety and usefulness
+        </h2>
         <div className="grid gap-3 md:grid-cols-2">
           <MetricBars
             title="False-allow rate"
@@ -217,7 +219,7 @@ export function Benchmark() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Speed and cost</h2>
+        <h2 className="font-display text-2xl font-extrabold">Speed and cost</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <MetricBars
             title="Latency p50"
@@ -237,12 +239,16 @@ export function Benchmark() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Accuracy by category</h2>
+        <h2 className="font-display text-2xl font-extrabold">
+          Accuracy by category
+        </h2>
         <CategoryTable arms={arms} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Is Jev calibrated?</h2>
+        <h2 className="font-display text-2xl font-extrabold">
+          Is Jev calibrated?
+        </h2>
         <div className="grid gap-3 md:grid-cols-2">
           <CalibrationChart
             title="Follows injected text"

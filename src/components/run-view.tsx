@@ -5,13 +5,8 @@ import type {FunctionReturnType} from 'convex/server';
 import {api} from '../../convex/_generated/api';
 import type {Id} from '../../convex/_generated/dataModel';
 import {SignalBar} from './decision-card';
-import {
-  formatUsd,
-  reasonLabel,
-  STATUS_LABEL,
-  VERDICT_CLASS,
-  VERDICT_LABEL
-} from '@/lib/labels';
+import {Stamp} from './stamp';
+import {formatUsd, reasonLabel, STATUS_LABEL} from '@/lib/labels';
 
 export type Run = FunctionReturnType<typeof api.runs.mine>[number];
 
@@ -77,13 +72,7 @@ function Steps({runId}: {runId: Id<'runs'>}) {
               <span className="font-mono text-sm font-semibold">
                 {step.tool}
               </span>
-              {step.decision && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${VERDICT_CLASS[step.decision.verdict]}`}
-                >
-                  {VERDICT_LABEL[step.decision.verdict]}
-                </span>
-              )}
+              {step.decision && <Stamp verdict={step.decision.verdict} />}
               {step.decision && (
                 <span className="text-sm">
                   {reasonLabel(step.decision.reasonCode)}
@@ -156,7 +145,7 @@ export function RunView({run}: {run: Run}) {
   return (
     <section className="flex flex-col gap-3" aria-live="polite">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-semibold">{run.message}</h2>
+        <h2 className="font-display text-2xl font-extrabold">{run.message}</h2>
         <span className="text-sm">
           <span className={RUN_STATUS_CLASS[run.status]}>
             {RUN_STATUS[run.status]}

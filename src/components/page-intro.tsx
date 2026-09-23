@@ -10,10 +10,12 @@ export function PageIntro({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium text-accent">{eyebrow}</p>
-      <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-      <div className="text-muted">{children}</div>
+    <div className="flex flex-col gap-3">
+      <p className="font-mono text-xs text-muted">{eyebrow}</p>
+      <h1 className="font-display text-4xl leading-none font-extrabold tracking-tight text-balance sm:text-5xl">
+        {title}
+      </h1>
+      <div className="max-w-2xl text-muted">{children}</div>
     </div>
   );
 }
