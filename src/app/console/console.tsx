@@ -5,6 +5,7 @@ import {useState, type FormEvent} from 'react';
 import {api} from '../../../convex/_generated/api';
 import {useSessionToken} from '@/components/convex-provider';
 import {SessionNotice} from '@/components/session-notice';
+import {Spinner} from '@/components/spinner';
 import {isSessionError, userMessage} from '@/lib/errors';
 import {RunView} from '@/components/run-view';
 
@@ -67,7 +68,14 @@ export function Console() {
             disabled={sending || !isAuthenticated}
             className="rounded-md bg-ink px-4 py-2 font-medium text-paper disabled:opacity-50"
           >
-            {sending ? 'Running…' : 'Run'}
+            {sending ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner />
+                Running
+              </span>
+            ) : (
+              'Run'
+            )}
           </button>
         </div>
         <div className="flex flex-wrap gap-2">

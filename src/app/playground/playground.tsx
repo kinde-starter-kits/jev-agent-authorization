@@ -5,6 +5,7 @@ import {useState} from 'react';
 import {api} from '../../../convex/_generated/api';
 import {useSessionToken} from '@/components/convex-provider';
 import {SessionNotice} from '@/components/session-notice';
+import {Spinner} from '@/components/spinner';
 import {isSessionError, userMessage} from '@/lib/errors';
 import {RunView} from '@/components/run-view';
 import {VERDICT_CLASS, VERDICT_LABEL} from '@/lib/labels';
@@ -72,7 +73,14 @@ export function Playground() {
                 disabled={running !== null || !isAuthenticated}
                 className="mt-auto w-fit rounded-md bg-ink px-3 py-1.5 text-sm font-medium text-paper disabled:opacity-50"
               >
-                {running === scenario.id ? 'Running…' : 'Run scenario'}
+                {running === scenario.id ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Spinner />
+                    Running
+                  </span>
+                ) : (
+                  'Run scenario'
+                )}
               </button>
             </li>
           ))}

@@ -5,6 +5,7 @@ import type {FunctionReturnType} from 'convex/server';
 import {api} from '../../convex/_generated/api';
 import type {Id} from '../../convex/_generated/dataModel';
 import {SignalBar} from './decision-card';
+import {Spinner} from './spinner';
 import {Stamp} from './stamp';
 import {formatUsd, reasonLabel, STATUS_LABEL} from '@/lib/labels';
 
@@ -47,7 +48,26 @@ function argsSummary(argsJson: string | null) {
   }
 }
 
-function Steps({runId}: {runId: Id<'runs'>}) {
+function workingText(last: {kind: string} | undefined) {
+  if (!last) return 'The agent is reading the request.';
+  if (last.kind === 'assistant')
+    return 'The agent is calling a tool. The guard checks it with Kinde and Jev.';
+  return 'The agent is reading the result and choosing the next step.';
+}
+
+function Working({text}: {text: string}) {
+  return (
+    <li className="flex items-center gap-3 rounded-xl border border-dashed border-line px-3 py-3 text-sm text-muted">
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent" />
+      </span>
+      {text}
+    </li>
+  );
+}
+
+function Steps({runId, running}: {runId: Id<'runs'>; running: boolean}) {
   const steps = useQuery(api.runs.steps, {runId});
   if (steps === undefined)
     return <div className="h-16 animate-pulse rounded-xl bg-track" />;
@@ -136,6 +156,7 @@ function Steps({runId}: {runId: Id<'runs'>}) {
           </li>
         )
       )}
+      {running && <Working text={workingText(steps.at(-1))} />}
     </ol>
   );
 }
@@ -147,7 +168,10 @@ export function RunView({run}: {run: Run}) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-2xl font-extrabold">{run.message}</h2>
         <span className="text-sm">
-          <span className={RUN_STATUS_CLASS[run.status]}>
+          <span
+            className={`inline-flex items-center gap-1.5 ${RUN_STATUS_CLASS[run.status]}`}
+          >
+            {run.status === 'running' && <Spinner />}
             {RUN_STATUS[run.status]}
           </span>
           <span className="text-faint">
@@ -157,7 +181,7 @@ export function RunView({run}: {run: Run}) {
           </span>
         </span>
       </div>
-      <Steps runId={run.id} />
+      <Steps runId={run.id} running={run.status === 'running'} />
       {run.finalText && (scripted || run.status !== 'done') && (
         <p className="text-sm text-muted">{run.finalText}</p>
       )}
