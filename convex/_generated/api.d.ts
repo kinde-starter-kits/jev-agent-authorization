@@ -10,12 +10,15 @@
 
 import type * as api_openapi from "../api/openapi.js";
 import type * as api_operations from "../api/operations.js";
+import type * as crons from "../crons.js";
 import type * as guard_access from "../guard/access.js";
+import type * as guard_approvals from "../guard/approvals.js";
 import type * as guard_handler from "../guard/handler.js";
 import type * as guard_policy from "../guard/policy.js";
 import type * as guard_state from "../guard/state.js";
 import type * as guard_token from "../guard/token.js";
 import type * as guardContext from "../guardContext.js";
+import type * as held from "../held.js";
 import type * as http from "../http.js";
 import type * as jev_client from "../jev/client.js";
 import type * as jev_judge from "../jev/judge.js";
@@ -40,12 +43,15 @@ import type {
 declare const fullApi: ApiFromModules<{
   "api/openapi": typeof api_openapi;
   "api/operations": typeof api_operations;
+  crons: typeof crons;
   "guard/access": typeof guard_access;
+  "guard/approvals": typeof guard_approvals;
   "guard/handler": typeof guard_handler;
   "guard/policy": typeof guard_policy;
   "guard/state": typeof guard_state;
   "guard/token": typeof guard_token;
   guardContext: typeof guardContext;
+  held: typeof held;
   http: typeof http;
   "jev/client": typeof jev_client;
   "jev/judge": typeof jev_judge;

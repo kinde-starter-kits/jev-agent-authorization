@@ -341,7 +341,11 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
     }
   }
 
-  let recorded: {decisionId: Id<'decisions'>; workspaceId: Id<'workspaces'>};
+  let recorded: {
+    decisionId: Id<'decisions'>;
+    workspaceId: Id<'workspaces'>;
+    held?: {heldCallId: Id<'heldCalls'>; expiresAt: number};
+  };
   try {
     recorded = await ctx.runMutation(internal.ledger.begin, {
       sub: claims.sub,
@@ -372,7 +376,9 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       verdict: decision.verdict,
       reasonCode: decision.reasonCode,
       policyVersion: POLICY_VERSION,
-      guardMs: Date.now() - started
+      guardMs: Date.now() - started,
+      holdArgsJson:
+        decision.verdict === 'step_up' ? JSON.stringify(args) : undefined
     });
   } catch {
     return errorResponse(
@@ -381,15 +387,38 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       'The decision could not be recorded, so the call did not run.'
     );
   }
-  const {decisionId, workspaceId} = recorded;
+  const {decisionId, workspaceId, held} = recorded;
+
+  if (decision.verdict === 'step_up' && held) {
+    const appUrl = env.GATEHOUSE_APP_URL;
+    const approvalUrl = appUrl
+      ? new URL(`/approve/${held.heldCallId}`, appUrl).toString()
+      : null;
+    return json(
+      403,
+      {
+        error: {
+          code: decision.reasonCode,
+          message: approvalUrl
+            ? `The call is held. It runs only after the user approves it with a fresh sign-in at ${approvalUrl}. Give the user this link and stop.`
+            : 'The call is held. It runs only after the user approves it with a fresh sign-in.'
+        },
+        decision: {id: decisionId, verdict: decision.verdict},
+        approval: {
+          id: held.heldCallId,
+          url: approvalUrl,
+          expiresAt: new Date(held.expiresAt).toISOString()
+        }
+      },
+      {'X-Gatehouse-Decision': decisionId}
+    );
+  }
 
   if (decision.verdict !== 'allow') {
     return errorResponse(
       403,
       decision.reasonCode,
-      decision.verdict === 'step_up'
-        ? 'This call needs the user to confirm it before it runs.'
-        : 'The guard refused this call.',
+      'The guard refused this call.',
       {decisionId}
     );
   }
