@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import {Bricolage_Grotesque, Geist, Geist_Mono} from 'next/font/google';
 import type {ReactNode} from 'react';
+import {SiteFooter} from '@/components/site-footer';
 import {SiteHeader} from '@/components/site-header';
 import {AuthProvider} from './auth-provider';
 import './globals.css';
@@ -29,6 +30,7 @@ export default function RootLayout({children}: {children: ReactNode}) {
         <AuthProvider>
           <SiteHeader />
           {children}
+          <SiteFooter />
         </AuthProvider>
       </body>
     </html>

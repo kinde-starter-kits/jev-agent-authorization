@@ -7,6 +7,7 @@ export default withAuth(async function proxy() {}, {
     '/console',
     '/playground',
     '/benchmark',
+    '/connect',
     '/api/session-token'
   ]
 });
