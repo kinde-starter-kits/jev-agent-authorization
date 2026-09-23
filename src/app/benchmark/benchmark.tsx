@@ -62,6 +62,8 @@ function Headline({arms}: {arms: Arms}) {
               </dd>
               <dt className="text-muted">Errors</dt>
               <dd className="text-right font-mono">{pct(arm.errorRate)}</dd>
+              <dt className="text-muted">Unreadable answers</dt>
+              <dd className="text-right font-mono">{pct(arm.parseFailRate)}</dd>
             </dl>
           </li>
         );

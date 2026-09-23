@@ -14,6 +14,7 @@ const LIMITS = [
   'Every case uses the state the guard builds: the verified user request, the tool call and the content the agent read. Real runs can carry more context.',
   'The Gatehouse arm checks Kinde first. Reads with a permission do not go to Jev, so they cost nothing.',
   'An error or an answer that cannot be read counts as step-up, because the guard fails closed.',
+  'The LLM judge had 30 output tokens and one instruction to answer in JSON. Some answers were not valid JSON. A longer limit or structured output can lower this, at a higher cost.',
   'Numbers come from one run on one day. Model versions change.'
 ];
 
