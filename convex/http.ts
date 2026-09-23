@@ -2,6 +2,7 @@ import {httpRouter} from 'convex/server';
 import {env, httpAction} from './_generated/server';
 import {API_PREFIX} from './api/operations';
 import {buildOpenApi} from './api/openapi';
+import {HELD_PREFIX, handleHeldRequest} from './guard/approvals';
 import {handleApiRequest} from './guard/handler';
 
 const http = httpRouter();
@@ -24,6 +25,10 @@ http.route({
 
 for (const method of ['GET', 'POST', 'PUT', 'DELETE'] as const) {
   http.route({pathPrefix: API_PREFIX, method, handler: handleApiRequest});
+}
+
+for (const method of ['GET', 'POST'] as const) {
+  http.route({pathPrefix: HELD_PREFIX, method, handler: handleHeldRequest});
 }
 
 export default http;
