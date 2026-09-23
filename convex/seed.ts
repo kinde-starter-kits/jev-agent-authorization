@@ -6,6 +6,7 @@ import * as data from './lib/seedData';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const workspaceTables = [
+  'exports',
   'refunds',
   'invoices',
   'documents',
@@ -14,40 +15,30 @@ const workspaceTables = [
   'projects'
 ] as const;
 
+const CLEAR_BATCH = 1000;
+
 async function clearWorkspace(ctx: MutationCtx, workspaceId: Id<'workspaces'>) {
   for (const table of workspaceTables) {
-    if (table === 'refunds') {
-      const invoices = await ctx.db
-        .query('invoices')
-        .withIndex('by_workspace', (q) => q.eq('workspaceId', workspaceId))
-        .collect();
-      for (const invoice of invoices) {
-        const refunds = await ctx.db
-          .query('refunds')
-          .withIndex('by_invoice', (q) => q.eq('invoiceId', invoice._id))
-          .collect();
-        for (const refund of refunds) await ctx.db.delete(refund._id);
-      }
-      continue;
-    }
     const rows = await ctx.db
       .query(table)
-      .withIndex('by_workspace', (q) => q.eq('workspaceId', workspaceId))
-      .collect();
-    for (const row of rows) await ctx.db.delete(row._id);
+      .withIndex('by_workspaceId', (q) => q.eq('workspaceId', workspaceId))
+      .take(CLEAR_BATCH);
+    for (const row of rows) await ctx.db.delete(table, row._id);
   }
 }
 
 export async function seedWorkspace(ctx: MutationCtx, ownerSub: string) {
   const existing = await ctx.db
     .query('workspaces')
-    .withIndex('by_owner', (q) => q.eq('ownerSub', ownerSub))
+    .withIndex('by_ownerSub', (q) => q.eq('ownerSub', ownerSub))
     .unique();
 
   let workspaceId: Id<'workspaces'>;
   if (existing) {
     await clearWorkspace(ctx, existing._id);
-    await ctx.db.patch(existing._id, {seedVersion: data.SEED_VERSION});
+    await ctx.db.patch('workspaces', existing._id, {
+      seedVersion: data.SEED_VERSION
+    });
     workspaceId = existing._id;
   } else {
     workspaceId = await ctx.db.insert('workspaces', {
@@ -78,8 +69,9 @@ export async function seedWorkspace(ctx: MutationCtx, ownerSub: string) {
   for (const invoice of data.invoices) {
     const projectId = projectIds.get(invoice.project);
     const customerId = customerIds[invoice.customer];
-    if (!projectId || !customerId)
+    if (!projectId || !customerId) {
       throw new Error(`Bad seed row ${invoice.number}`);
+    }
     await ctx.db.insert('invoices', {
       workspaceId,
       projectId,

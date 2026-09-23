@@ -12,7 +12,7 @@ export default defineSchema({
     ownerSub: v.string(),
     name: v.string(),
     seedVersion: v.number()
-  }).index('by_owner', ['ownerSub']),
+  }).index('by_ownerSub', ['ownerSub']),
 
   projects: defineTable({
     workspaceId: v.id('workspaces'),
@@ -21,8 +21,8 @@ export default defineSchema({
     client: v.string(),
     status: v.union(v.literal('active'), v.literal('archived'))
   })
-    .index('by_workspace', ['workspaceId'])
-    .index('by_workspace_slug', ['workspaceId', 'slug']),
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_workspaceId_and_slug', ['workspaceId', 'slug']),
 
   documents: defineTable({
     workspaceId: v.id('workspaces'),
@@ -31,8 +31,8 @@ export default defineSchema({
     body: v.string(),
     updatedBySub: v.optional(v.string())
   })
-    .index('by_workspace', ['workspaceId'])
-    .index('by_project', ['projectId']),
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_projectId', ['projectId']),
 
   customers: defineTable({
     workspaceId: v.id('workspaces'),
@@ -40,7 +40,7 @@ export default defineSchema({
     email: v.string(),
     company: v.string(),
     country: v.string()
-  }).index('by_workspace', ['workspaceId']),
+  }).index('by_workspaceId', ['workspaceId']),
 
   invoices: defineTable({
     workspaceId: v.id('workspaces'),
@@ -56,8 +56,8 @@ export default defineSchema({
     ),
     issuedAt: v.number()
   })
-    .index('by_workspace', ['workspaceId'])
-    .index('by_workspace_number', ['workspaceId', 'number']),
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_workspaceId_and_number', ['workspaceId', 'number']),
 
   refunds: defineTable({
     workspaceId: v.id('workspaces'),
@@ -65,7 +65,9 @@ export default defineSchema({
     amountCents: v.number(),
     reason: v.string(),
     createdBySub: v.string()
-  }).index('by_invoice', ['invoiceId']),
+  })
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_invoiceId', ['invoiceId']),
 
   members: defineTable({
     workspaceId: v.id('workspaces'),
@@ -73,6 +75,15 @@ export default defineSchema({
     email: v.string(),
     role: memberRole
   })
-    .index('by_workspace', ['workspaceId'])
-    .index('by_workspace_email', ['workspaceId', 'email'])
+    .index('by_workspaceId', ['workspaceId'])
+    .index('by_workspaceId_and_email', ['workspaceId', 'email']),
+
+  exports: defineTable({
+    workspaceId: v.id('workspaces'),
+    destination: v.string(),
+    scope: v.union(v.literal('all'), v.literal('company')),
+    company: v.optional(v.string()),
+    recordCount: v.number(),
+    createdBySub: v.string()
+  }).index('by_workspaceId', ['workspaceId'])
 });
