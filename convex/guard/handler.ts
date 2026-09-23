@@ -15,13 +15,8 @@ import {
 } from './access';
 import {askJev, type JevResult} from '../jev/client';
 import {askJudge, type JudgeResult} from '../jev/judge';
-import {
-  checkKinde,
-  decideKinde,
-  decideWithSignals,
-  POLICY_VERSION,
-  type Decision
-} from './policy';
+import {judgeWithJev, type Judgment} from './judgment';
+import {checkKinde, decideKinde, POLICY_VERSION, type Decision} from './policy';
 import {buildState, intentSourceOf, type Intent} from './state';
 import {
   bearerToken,
@@ -222,7 +217,7 @@ async function judgeCall(
   reason: string | undefined,
   sub: string,
   intent: Intent
-): Promise<{decision: Decision; jev?: JevResult; judge?: JudgeResult}> {
+): Promise<Judgment> {
   const apiKey = env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return {decision: {verdict: 'step_up', reasonCode: 'jev_not_configured'}};
@@ -233,43 +228,17 @@ async function judgeCall(
   });
   const state = buildState(operation, args, reason, context, intent);
 
-  let jev: JevResult;
-  try {
-    jev = await askJev(state, {apiKey, model: env.JEV_MODEL});
-  } catch {
-    return {decision: {verdict: 'step_up', reasonCode: 'jev_unavailable'}};
-  }
-
-  const result = decideWithSignals(
-    operation,
-    jev.signals,
-    reason !== undefined || intent.source === 'verified'
-  );
-  if (!('cascade' in result)) return {decision: result, jev};
-
   const judgeModel = env.LLM_JUDGE_MODEL;
-  if (!judgeModel) {
-    return {
-      decision: {verdict: 'step_up', reasonCode: 'judge_not_configured'},
-      jev
-    };
-  }
-  try {
-    const judge = await askJudge(state, {apiKey, model: judgeModel});
-    return {
-      decision: {
-        verdict: judge.verdict,
-        reasonCode: judge.verdict === 'allow' ? 'judge_allow' : 'judge_step_up'
-      },
-      jev,
-      judge
-    };
-  } catch {
-    return {
-      decision: {verdict: 'step_up', reasonCode: 'judge_unavailable'},
-      jev
-    };
-  }
+  return judgeWithJev(
+    operation,
+    reason !== undefined || intent.source === 'verified',
+    {
+      jev: () => askJev(state, {apiKey, model: env.JEV_MODEL}),
+      judge: judgeModel
+        ? () => askJudge(state, {apiKey, model: judgeModel})
+        : null
+    }
+  );
 }
 
 export const handleApiRequest = httpAction(async (ctx, request) => {
