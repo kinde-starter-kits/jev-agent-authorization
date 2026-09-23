@@ -5,7 +5,7 @@ import {
   internalQuery,
   type QueryCtx
 } from '../_generated/server';
-import {fail, requireReason} from '../lib/errors';
+import {fail} from '../lib/errors';
 
 const LIST_LIMIT = 100;
 const MAX_TITLE = 200;
@@ -72,13 +72,9 @@ export const createDocument = internalMutation({
     title: v.string(),
     body: v.string(),
     projectSlug: v.optional(v.string()),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (
-    ctx,
-    {workspaceId, actorSub, title, body, projectSlug, reason}
-  ) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, actorSub, title, body, projectSlug}) => {
     checkText(title, body);
     let projectId: Id<'projects'> | undefined;
     if (projectSlug) {
@@ -108,10 +104,9 @@ export const updateDocument = internalMutation({
     actorSub: v.string(),
     documentId: v.id('documents'),
     body: v.string(),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (ctx, {workspaceId, actorSub, documentId, body, reason}) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, actorSub, documentId, body}) => {
     checkText(undefined, body);
     const document = await documentInWorkspace(ctx, workspaceId, documentId);
     await ctx.db.patch('documents', document._id, {

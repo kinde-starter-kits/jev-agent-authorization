@@ -5,7 +5,7 @@ import {
   internalQuery,
   type QueryCtx
 } from '../_generated/server';
-import {fail, requireReason} from '../lib/errors';
+import {fail} from '../lib/errors';
 
 const LIST_LIMIT = 100;
 const CASCADE_LIMIT = 1000;
@@ -75,10 +75,9 @@ export const archiveProject = internalMutation({
     workspaceId: v.id('workspaces'),
     actorSub: v.string(),
     slug: v.string(),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (ctx, {workspaceId, slug, reason}) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, slug}) => {
     const project = await projectBySlug(ctx, workspaceId, slug);
     if (project.status === 'archived') {
       fail('conflict', `Project "${slug}" is already archived.`);
@@ -93,10 +92,9 @@ export const deleteProject = internalMutation({
     workspaceId: v.id('workspaces'),
     actorSub: v.string(),
     slug: v.string(),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (ctx, {workspaceId, slug, reason}) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, slug}) => {
     const project = await projectBySlug(ctx, workspaceId, slug);
 
     const documents = await ctx.db

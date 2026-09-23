@@ -1,6 +1,6 @@
 import {v} from 'convex/values';
 import {internalMutation, internalQuery} from '../_generated/server';
-import {fail, requireReason} from '../lib/errors';
+import {fail} from '../lib/errors';
 import {memberRole} from '../schema';
 
 const LIST_LIMIT = 100;
@@ -24,10 +24,9 @@ export const inviteMember = internalMutation({
     email: v.string(),
     name: v.string(),
     role: memberRole,
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (ctx, {workspaceId, email, name, role, reason}) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, email, name, role}) => {
     const normalized = email.trim().toLowerCase();
     if (!EMAIL.test(normalized))
       fail('invalid_argument', 'Give a valid email address.');
@@ -55,10 +54,9 @@ export const removeMember = internalMutation({
     workspaceId: v.id('workspaces'),
     actorSub: v.string(),
     email: v.string(),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
-  handler: async (ctx, {workspaceId, email, reason}) => {
-    requireReason(reason);
+  handler: async (ctx, {workspaceId, email}) => {
     const normalized = email.trim().toLowerCase();
     const member = await ctx.db
       .query('members')

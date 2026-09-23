@@ -1,7 +1,7 @@
 import {v} from 'convex/values';
 import type {Id} from '../_generated/dataModel';
 import {internalMutation, internalQuery} from '../_generated/server';
-import {fail, requireReason} from '../lib/errors';
+import {fail} from '../lib/errors';
 
 const LIST_LIMIT = 100;
 
@@ -42,13 +42,12 @@ export const issueRefund = internalMutation({
     actorSub: v.string(),
     invoiceNumber: v.string(),
     amountCents: v.number(),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
   handler: async (
     ctx,
     {workspaceId, actorSub, invoiceNumber, amountCents, reason}
   ) => {
-    const cleanReason = requireReason(reason);
     if (!Number.isInteger(amountCents) || amountCents <= 0) {
       fail('invalid_argument', 'amountCents must be a positive whole number.');
     }
@@ -84,7 +83,7 @@ export const issueRefund = internalMutation({
       workspaceId,
       invoiceId: invoice._id,
       amountCents,
-      reason: cleanReason,
+      reason: reason?.trim() ?? '',
       createdBySub: actorSub
     });
     const fullyRefunded = amountCents === remaining;

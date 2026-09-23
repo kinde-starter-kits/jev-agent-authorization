@@ -1,6 +1,6 @@
 import {v} from 'convex/values';
 import {internalMutation} from '../_generated/server';
-import {fail, requireReason} from '../lib/errors';
+import {fail} from '../lib/errors';
 
 const EXPORT_LIMIT = 1000;
 
@@ -11,13 +11,12 @@ export const exportCustomers = internalMutation({
     destination: v.string(),
     scope: v.union(v.literal('all'), v.literal('company')),
     company: v.optional(v.string()),
-    reason: v.string()
+    reason: v.optional(v.string())
   },
   handler: async (
     ctx,
-    {workspaceId, actorSub, destination, scope, company, reason}
+    {workspaceId, actorSub, destination, scope, company}
   ) => {
-    requireReason(reason);
     let url: URL;
     try {
       url = new URL(destination);
