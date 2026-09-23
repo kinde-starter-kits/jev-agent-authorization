@@ -10,11 +10,20 @@ export type GuardContext = {
   recent: Array<{operation: string; verdict: string; secondsAgo: number}>;
 };
 
+export type Intent =
+  {source: 'verified'; userRequest: string} | {source: 'claimed' | 'none'};
+
+export function intentSourceOf(intent: Intent, reason: string | undefined) {
+  if (intent.source === 'verified') return 'verified' as const;
+  return reason ? ('claimed' as const) : ('none' as const);
+}
+
 export function buildState(
   operation: Operation,
   args: Record<string, unknown>,
   reason: string | undefined,
-  context: GuardContext
+  context: GuardContext,
+  intent: Intent = {source: 'none'}
 ) {
   const callArguments = Object.fromEntries(
     Object.entries(args).filter(([key]) => key !== 'reason')
@@ -27,6 +36,14 @@ export function buildState(
       effect: operation.description,
       arguments: callArguments
     },
+    user_request:
+      intent.source === 'verified'
+        ? {
+            text: intent.userRequest,
+            source:
+              'what the signed-in user typed in the Gatehouse console, verified by the server'
+          }
+        : null,
     stated_reason: reason ?? null,
     stated_reason_source: reason
       ? 'written by the agent in the request, not verified'

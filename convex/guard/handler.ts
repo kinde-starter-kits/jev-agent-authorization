@@ -22,7 +22,7 @@ import {
   POLICY_VERSION,
   type Decision
 } from './policy';
-import {buildState} from './state';
+import {buildState, intentSourceOf, type Intent} from './state';
 import {
   bearerToken,
   remoteJwks,
@@ -203,12 +203,25 @@ function jevForLedger(jev: JevResult) {
   };
 }
 
+async function intentFor(ctx: ActionCtx, claims: KindeClaims): Promise<Intent> {
+  const webClient = env.KINDE_WEB_CLIENT_ID;
+  if (!webClient || claims.azp !== webClient) return {source: 'none'};
+  const run = await ctx.runQuery(internal.runs.activeForSub, {
+    sub: claims.sub,
+    now: Date.now()
+  });
+  return run
+    ? {source: 'verified', userRequest: run.message}
+    : {source: 'none'};
+}
+
 async function judgeCall(
   ctx: ActionCtx,
   operation: Operation,
   args: JsonObject,
   reason: string | undefined,
-  sub: string
+  sub: string,
+  intent: Intent
 ): Promise<{decision: Decision; jev?: JevResult; judge?: JudgeResult}> {
   const apiKey = env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -218,7 +231,7 @@ async function judgeCall(
     sub,
     now: Date.now()
   });
-  const state = buildState(operation, args, reason, context);
+  const state = buildState(operation, args, reason, context, intent);
 
   let jev: JevResult;
   try {
@@ -230,7 +243,7 @@ async function judgeCall(
   const result = decideWithSignals(
     operation,
     jev.signals,
-    reason !== undefined
+    reason !== undefined || intent.source === 'verified'
   );
   if (!('cascade' in result)) return {decision: result, jev};
 
@@ -324,6 +337,7 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
           flagEnabled: null
         }
       : checkKinde(operation, access);
+  const intent = await intentFor(ctx, claims);
   let decision: Decision;
   let jev: JevResult | undefined;
   let judge: JudgeResult | undefined;
@@ -334,7 +348,14 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
     if (kindeDecision) {
       decision = kindeDecision;
     } else {
-      const judged = await judgeCall(ctx, operation, args, reason, claims.sub);
+      const judged = await judgeCall(
+        ctx,
+        operation,
+        args,
+        reason,
+        claims.sub,
+        intent
+      );
       decision = judged.decision;
       jev = judged.jev;
       judge = judged.judge;
@@ -356,6 +377,7 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       path: url.pathname,
       argsJson: argsForLog(args),
       reason,
+      intentSource: intentSourceOf(intent, reason),
       kinde: {
         orgCode: typeof access === 'string' ? undefined : access.orgCode,
         source: typeof access === 'string' ? undefined : access.source,

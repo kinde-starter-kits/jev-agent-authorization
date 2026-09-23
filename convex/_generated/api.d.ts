@@ -8,6 +8,11 @@
  * @module
  */
 
+import type * as agent_llm from "../agent/llm.js";
+import type * as agent_loop from "../agent/loop.js";
+import type * as agent_mcp from "../agent/mcp.js";
+import type * as agent_outcome from "../agent/outcome.js";
+import type * as agent_run from "../agent/run.js";
 import type * as api_openapi from "../api/openapi.js";
 import type * as api_operations from "../api/operations.js";
 import type * as crons from "../crons.js";
@@ -27,6 +32,7 @@ import type * as kindeAccess from "../kindeAccess.js";
 import type * as ledger from "../ledger.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_seedData from "../lib/seedData.js";
+import type * as runs from "../runs.js";
 import type * as seed from "../seed.js";
 import type * as workspace_customers from "../workspace/customers.js";
 import type * as workspace_documents from "../workspace/documents.js";
@@ -41,6 +47,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "agent/llm": typeof agent_llm;
+  "agent/loop": typeof agent_loop;
+  "agent/mcp": typeof agent_mcp;
+  "agent/outcome": typeof agent_outcome;
+  "agent/run": typeof agent_run;
   "api/openapi": typeof api_openapi;
   "api/operations": typeof api_operations;
   crons: typeof crons;
@@ -60,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   ledger: typeof ledger;
   "lib/errors": typeof lib_errors;
   "lib/seedData": typeof lib_seedData;
+  runs: typeof runs;
   seed: typeof seed;
   "workspace/customers": typeof workspace_customers;
   "workspace/documents": typeof workspace_documents;
