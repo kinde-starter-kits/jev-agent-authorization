@@ -32,9 +32,12 @@ type Env = {
   readonly CONVEX_SITE_URL: string;
   readonly GATEHOUSE_AUDIENCE: string | undefined;
   readonly GATEHOUSE_ORG_CODE: string | undefined;
+  readonly JEV_MODEL: string | undefined;
   readonly KINDE_ISSUER_URL: string | undefined;
   readonly KINDE_M2M_CLIENT_ID: string | undefined;
   readonly KINDE_M2M_CLIENT_SECRET: string | undefined;
+  readonly LLM_JUDGE_MODEL: string | undefined;
+  readonly OPENROUTER_API_KEY: string | undefined;
 };
 
 /**

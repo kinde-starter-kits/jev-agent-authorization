@@ -13,7 +13,16 @@ import {
   type Access,
   type AccessFailure
 } from './access';
-import {checkKinde, decide, POLICY_VERSION} from './policy';
+import {askJev, type JevResult} from '../jev/client';
+import {askJudge, type JudgeResult} from '../jev/judge';
+import {
+  checkKinde,
+  decideKinde,
+  decideWithSignals,
+  POLICY_VERSION,
+  type Decision
+} from './policy';
+import {buildState} from './state';
 import {
   bearerToken,
   remoteJwks,
@@ -177,6 +186,79 @@ async function runOperation(
   return await ctx.runMutation(operation.run.ref, args);
 }
 
+function jevForLedger(jev: JevResult) {
+  return {
+    model: jev.model,
+    ms: jev.ms,
+    inputTokens: jev.inputTokens,
+    costUsd: jev.costUsd ?? undefined,
+    matchesIntent: jev.signals.matchesIntent,
+    destructive: jev.signals.destructive,
+    injected: jev.signals.injected,
+    exfiltration: jev.signals.exfiltration,
+    risk: jev.signals.risk,
+    riskConfidence: jev.signals.riskConfidence,
+    verdictHint: jev.signals.verdictHint.choice,
+    verdictHintConfidence: jev.signals.verdictHint.confidence
+  };
+}
+
+async function judgeCall(
+  ctx: ActionCtx,
+  operation: Operation,
+  args: JsonObject,
+  reason: string | undefined,
+  sub: string
+): Promise<{decision: Decision; jev?: JevResult; judge?: JudgeResult}> {
+  const apiKey = env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return {decision: {verdict: 'step_up', reasonCode: 'jev_not_configured'}};
+  }
+  const context = await ctx.runQuery(internal.guardContext.forSub, {
+    sub,
+    now: Date.now()
+  });
+  const state = buildState(operation, args, reason, context);
+
+  let jev: JevResult;
+  try {
+    jev = await askJev(state, {apiKey, model: env.JEV_MODEL});
+  } catch {
+    return {decision: {verdict: 'step_up', reasonCode: 'jev_unavailable'}};
+  }
+
+  const result = decideWithSignals(
+    operation,
+    jev.signals,
+    reason !== undefined
+  );
+  if (!('cascade' in result)) return {decision: result, jev};
+
+  const judgeModel = env.LLM_JUDGE_MODEL;
+  if (!judgeModel) {
+    return {
+      decision: {verdict: 'step_up', reasonCode: 'judge_not_configured'},
+      jev
+    };
+  }
+  try {
+    const judge = await askJudge(state, {apiKey, model: judgeModel});
+    return {
+      decision: {
+        verdict: judge.verdict,
+        reasonCode: judge.verdict === 'allow' ? 'judge_allow' : 'judge_step_up'
+      },
+      jev,
+      judge
+    };
+  } catch {
+    return {
+      decision: {verdict: 'step_up', reasonCode: 'judge_unavailable'},
+      jev
+    };
+  }
+}
+
 export const handleApiRequest = httpAction(async (ctx, request) => {
   const started = Date.now();
   const url = new URL(request.url);
@@ -242,10 +324,22 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
           flagEnabled: null
         }
       : checkKinde(operation, access);
-  const decision =
-    typeof access === 'string'
-      ? {verdict: 'deny' as const, reasonCode: access}
-      : decide(operation, kinde);
+  let decision: Decision;
+  let jev: JevResult | undefined;
+  let judge: JudgeResult | undefined;
+  if (typeof access === 'string') {
+    decision = {verdict: 'deny', reasonCode: access};
+  } else {
+    const kindeDecision = decideKinde(operation, kinde);
+    if (kindeDecision) {
+      decision = kindeDecision;
+    } else {
+      const judged = await judgeCall(ctx, operation, args, reason, claims.sub);
+      decision = judged.decision;
+      jev = judged.jev;
+      judge = judged.judge;
+    }
+  }
 
   let recorded: {decisionId: Id<'decisions'>; workspaceId: Id<'workspaces'>};
   try {
@@ -266,6 +360,15 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
         flag: kinde.flag ?? undefined,
         flagEnabled: kinde.flagEnabled ?? undefined
       },
+      jev: jev ? jevForLedger(jev) : undefined,
+      judge: judge
+        ? {
+            model: judge.model,
+            ms: judge.ms,
+            verdict: judge.verdict,
+            costUsd: judge.costUsd ?? undefined
+          }
+        : undefined,
       verdict: decision.verdict,
       reasonCode: decision.reasonCode,
       policyVersion: POLICY_VERSION,
@@ -284,7 +387,9 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
     return errorResponse(
       403,
       decision.reasonCode,
-      'The guard refused this call.',
+      decision.verdict === 'step_up'
+        ? 'This call needs the user to confirm it before it runs.'
+        : 'The guard refused this call.',
       {decisionId}
     );
   }
@@ -311,6 +416,23 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
     return errorResponse(failure.status, failure.code, failure.message, {
       decisionId
     });
+  }
+
+  if (operation.operationId === 'getDocument') {
+    const document = result as {title?: unknown; body?: unknown};
+    if (
+      typeof document.title === 'string' &&
+      typeof document.body === 'string'
+    ) {
+      await ctx
+        .runMutation(internal.guardContext.recordServed, {
+          sub: claims.sub,
+          source: 'getDocument',
+          title: document.title,
+          content: document.body
+        })
+        .catch(() => null);
+    }
   }
 
   await ctx
