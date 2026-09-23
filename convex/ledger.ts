@@ -9,6 +9,7 @@ import {
   tier,
   verdict
 } from './schema';
+import {countDecision} from './lib/stats';
 import {seedWorkspace} from './seed';
 
 export const HOLD_TTL_MS = 10 * 60 * 1000;
@@ -58,6 +59,7 @@ export const begin = internalMutation({
             : 'refused',
       latency: {guardMs}
     });
+    await countDecision(ctx, decision);
     if (decision.verdict !== 'step_up' || holdArgsJson === undefined) {
       return {decisionId, workspaceId};
     }

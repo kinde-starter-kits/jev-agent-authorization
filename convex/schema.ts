@@ -184,6 +184,18 @@ export default defineSchema({
     .index('by_workspaceId', ['workspaceId'])
     .index('by_sub', ['sub']),
 
+  stats: defineTable({
+    key: v.literal('global'),
+    total: v.number(),
+    allowed: v.number(),
+    steppedUp: v.number(),
+    denied: v.number(),
+    judged: v.number(),
+    jevCostUsd: v.number(),
+    judgeCalls: v.number(),
+    judgeCostUsd: v.number()
+  }).index('by_key', ['key']),
+
   kindeAccessCache: defineTable({
     sub: v.string(),
     orgCode: v.string(),
