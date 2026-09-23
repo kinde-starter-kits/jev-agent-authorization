@@ -4,6 +4,8 @@ A starter kit that checks every AI agent tool call before it runs. Kinde checks 
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com) [![Kinde Docs](https://img.shields.io/badge/Kinde-Docs-eee?style=flat-square)](https://kinde.com/docs/developer-tools) [![Kinde Community](https://img.shields.io/badge/Kinde-Community-eee?style=flat-square)](https://thekindecommunity.slack.com)
 
+![Jev Gatehouse: the live ledger, with the stats block and the gate](docs/hero.png)
+
 ## What it does
 
 An agent calls a small workspace API through a Kinde MCP connection. The Kinde MCP server passes the user's access token to the API. The guard in front of the API runs these steps for each call:
@@ -17,12 +19,87 @@ An agent calls a small workspace API through a Kinde MCP connection. The Kinde M
 
 A call that needs approval is held for 10 minutes. The user approves it on a page that requires a fresh sign-in. The held call then runs once.
 
-The app has four pages:
+The app has five pages:
 
 - **Ledger** (`/`): a live stream of every decision, with the Kinde checks, the Jev signals and the cost.
 - **Agent console** (`/console`): an in-app agent that uses the same Kinde MCP path as any external client.
 - **Attack playground** (`/playground`): scripted attacks, such as planted instructions in a document, that go through the real guard.
 - **Benchmark** (`/benchmark`): 300 labeled tool calls, three ways to decide, and the results.
+- **Connect** (`/connect`): the Kinde MCP URL, the Cursor setup, and the tools that Kinde builds from the OpenAPI spec.
+
+## Who it is for and when to use it
+
+Use this kit if your product has an API and your users want to reach it from an AI agent. For example:
+
+- A SaaS team that ships an MCP server so customers can use the product from Cursor, Claude or their own agents.
+- A platform team that puts internal APIs behind an agent.
+- A developer who connects an agent to production data and wants a check before each write.
+
+Add the guard when an agent can do something that is hard to undo: delete data, move money, change who has access, or send data out. Permissions alone do not stop these calls. An agent can follow text that it read in a document, and the user's permissions still allow the call. The guard asks a second question on every call: did the user ask for this?
+
+Reads that the user has permission for skip Jev, so they add no cost.
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph Clients
+    A1[Cursor or another MCP client]
+    A2[In-app agent]
+  end
+  subgraph Kinde
+    K1[Secure MCP connection]
+    K2[Sign-in, organizations, permissions, feature flags]
+  end
+  subgraph Convex
+    G[Guard]
+    L[(Decision ledger)]
+    W[Workspace API]
+  end
+  J[Jev on OpenRouter]
+  U[Approval page with fresh Kinde sign-in]
+
+  A1 --> K1
+  A2 --> K1
+  K1 -- "user token + X-Kinde-User-Id" --> G
+  G -- "verify token, read access" --> K2
+  G -- "state: call, request, what the agent read" --> J
+  J -- "typed signals" --> G
+  G --> L
+  G -- "allow" --> W
+  G -- "step-up: held call" --> U
+  U -- "approved once" --> W
+```
+
+For each call, the guard makes one decision:
+
+```mermaid
+sequenceDiagram
+  participant Agent
+  participant Kinde as Kinde MCP
+  participant Guard
+  participant Jev
+  participant Ledger
+  participant API as Workspace API
+
+  Agent->>Kinde: tools/call deleteProject
+  Kinde->>Guard: DELETE /api/v1/projects/acme-rebrand (user token)
+  Guard->>Guard: verify token, check permission and flag
+  Guard->>Jev: tool call, user request, content the agent read
+  Jev-->>Guard: matches 0.90, destructive 0.96, injected 0.06
+  Guard->>Ledger: step_up, high_impact_operation
+  Guard-->>Kinde: 403 with approval link
+  Kinde-->>Agent: held, give the user this link
+  Note over Guard,API: The user signs in again with Kinde and approves. The call runs once.
+```
+
+## Screenshots
+
+| The ledger | An attack, stopped |
+| --- | --- |
+| ![The ledger with the gate strip and verdict stamps](docs/ledger.png) | ![The playground stops an admin invite that follows planted text](docs/playground-deny.png) |
+| **Approval with a fresh Kinde sign-in** | **The benchmark** |
+| ![The approval page asks the user to sign in again](docs/approval.png) | ![The benchmark page compares three deciders](docs/benchmark.png) |
 
 ## Benchmark results
 
