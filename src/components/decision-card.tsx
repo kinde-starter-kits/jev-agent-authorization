@@ -144,7 +144,7 @@ export function DecisionCard({decision}: {decision: PublicDecision}) {
             How sure was Jev?
           </summary>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-            <dt className="text-muted">Risk (0 to 4)</dt>
+            <dt className="text-muted">Risk (0 to 3)</dt>
             <dd className="font-mono">
               {jev.risk.toFixed(2)} · confidence {percent(jev.riskConfidence)}
             </dd>
