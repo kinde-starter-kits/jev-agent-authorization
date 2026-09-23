@@ -15,6 +15,9 @@
   --stepup-soft: #fbf0dc;
   --deny: #b42318;
   --deny-soft: #fbe9e7;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +36,9 @@
     --stepup-soft: #2e2413;
     --deny: #f47067;
     --deny-soft: #321716;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
   }
 }
 
@@ -51,6 +57,9 @@
   --color-stepup-soft: var(--stepup-soft);
   --color-deny: var(--deny);
   --color-deny-soft: var(--deny-soft);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }

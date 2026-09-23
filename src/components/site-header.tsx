@@ -5,7 +5,8 @@ import Link from 'next/link';
 const NAV = [
   {href: '/', label: 'Ledger'},
   {href: '/console', label: 'Console'},
-  {href: '/playground', label: 'Playground'}
+  {href: '/playground', label: 'Playground'},
+  {href: '/benchmark', label: 'Benchmark'}
 ];
 
 function GateMark() {
