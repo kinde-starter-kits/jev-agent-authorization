@@ -18,7 +18,8 @@
     "prepare": "husky",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bench": "convex run bench/runner:start '{\"repeats\": 3}'"
+    "bench": "convex run bench/runner:start '{\"repeats\": 3}'",
+    "e2e": "node --env-file=.env.local scripts/e2e.mjs"
   },
   "dependencies": {
     "@kinde-oss/kinde-auth-nextjs": "^2.13.1",
