@@ -242,6 +242,19 @@ async function judgeCall(
 }
 
 export const handleApiRequest = httpAction(async (ctx, request) => {
+  try {
+    return await guardRequest(ctx, request);
+  } catch {
+    // Fail closed: an unexpected failure never runs the call.
+    return errorResponse(
+      503,
+      'guard_error',
+      'The guard failed, so the call did not run.'
+    );
+  }
+});
+
+async function guardRequest(ctx: ActionCtx, request: Request) {
   const started = Date.now();
   const url = new URL(request.url);
   const match = matchOperation(request.method, url.pathname);
@@ -287,6 +300,20 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       401,
       'identity_mismatch',
       'The user header does not match the token.'
+    );
+  }
+
+  const rate = await ctx.runMutation(internal.rateLimit.hit, {
+    bucket: 'api',
+    sub: claims.sub,
+    now: Date.now()
+  });
+  if (!rate.ok) {
+    return errorResponse(
+      429,
+      'rate_limited',
+      'Too many calls. Wait, then try again.',
+      {headers: {'Retry-After': String(Math.ceil(rate.retryAfterMs / 1000))}}
     );
   }
 
@@ -444,14 +471,31 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
       typeof document.title === 'string' &&
       typeof document.body === 'string'
     ) {
-      await ctx
-        .runMutation(internal.guardContext.recordServed, {
+      // Jev must see what the agent read. If the guard cannot remember this
+      // document, it does not hand it over.
+      try {
+        await ctx.runMutation(internal.guardContext.recordServed, {
           sub: claims.sub,
           source: 'getDocument',
           title: document.title,
           content: document.body
-        })
-        .catch(() => null);
+        });
+      } catch {
+        await ctx
+          .runMutation(internal.ledger.complete, {
+            decisionId,
+            status: 'failed',
+            errorCode: 'audit_unavailable',
+            operationMs: Date.now() - operationStarted
+          })
+          .catch(() => null);
+        return errorResponse(
+          503,
+          'audit_unavailable',
+          'The guard could not record what the agent read, so it did not return the document.',
+          {decisionId}
+        );
+      }
     }
   }
 
@@ -468,4 +512,4 @@ export const handleApiRequest = httpAction(async (ctx, request) => {
     {data: result, decision: {id: decisionId, verdict: decision.verdict}},
     {'X-Gatehouse-Decision': decisionId}
   );
-});
+}

@@ -1,5 +1,5 @@
 import {internal} from '../_generated/api';
-import {env, httpAction} from '../_generated/server';
+import {env, httpAction, type ActionCtx} from '../_generated/server';
 import {bearerToken, remoteJwks, verifyKindeToken} from './token';
 
 export const HELD_PREFIX = '/api/held/';
@@ -23,6 +23,15 @@ function error(
 }
 
 export const handleHeldRequest = httpAction(async (ctx, request) => {
+  try {
+    return await heldRequest(ctx, request);
+  } catch {
+    // Approval runs in one mutation, so a failure rolls back: nothing ran.
+    return error(503, 'guard_error', 'The request failed. Nothing ran.');
+  }
+});
+
+async function heldRequest(ctx: ActionCtx, request: Request) {
   const url = new URL(request.url);
   const rest = url.pathname.slice(HELD_PREFIX.length).split('/');
   const [heldId, action] = rest;
@@ -100,4 +109,4 @@ export const handleHeldRequest = httpAction(async (ctx, request) => {
   if (!result.ok)
     return error(STATUS_FOR[result.code] ?? 400, result.code, result.message);
   return Response.json({data: result});
-});
+}
