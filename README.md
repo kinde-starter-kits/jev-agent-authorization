@@ -98,8 +98,10 @@ sequenceDiagram
 | The ledger | An attack, stopped |
 | --- | --- |
 | ![The ledger with the gate strip and verdict stamps](docs/ledger.png) | ![The playground stops an admin invite that follows planted text](docs/playground-deny.png) |
-| **Approval with a fresh Kinde sign-in** | **The benchmark** |
-| ![The approval page asks the user to sign in again](docs/approval.png) | ![The benchmark page compares three deciders](docs/benchmark.png) |
+| **A destructive call, held for approval** | **Connect any agent through Kinde MCP** |
+| ![A delete is held until the user approves it with a fresh Kinde sign-in](docs/playground-held.png) | ![The connect page shows the Kinde MCP flow and the tools Kinde builds from the OpenAPI spec](docs/connect.png) |
+
+![The benchmark page compares Jev signals with policy code, the Jev single verdict and an LLM judge](docs/benchmark.png)
 
 ## Benchmark results
 
