@@ -433,7 +433,7 @@ describe('Jev judgment', () => {
     expect(status).toBe(403);
     expect(body.error?.code).toBe('judge_unavailable');
     const [decision] = await decisions(t);
-    expect(decision).toMatchObject({verdict: 'step_up', status: 'refused'});
+    expect(decision).toMatchObject({verdict: 'step_up', status: 'held'});
     const project = await t.run((ctx) =>
       ctx.db
         .query('projects')
