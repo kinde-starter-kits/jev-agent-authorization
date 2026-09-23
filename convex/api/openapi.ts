@@ -28,6 +28,7 @@ export function buildOpenApi(serverUrl: string) {
       description: op.description,
       'x-permission': op.permission,
       'x-tier': op.tier,
+      ...(op.flag ? {'x-feature-flag': op.flag} : {}),
       responses: {
         '200': {
           description: 'Success',

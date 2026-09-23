@@ -17,6 +17,7 @@ export type Operation = {
   summary: string;
   description: string;
   permission: string;
+  flag?: string;
   tier: Tier;
   pathParams: readonly string[];
   body?: {required: readonly string[]; properties: Record<string, JsonSchema>};
@@ -37,7 +38,7 @@ export const operations: readonly Operation[] = [
     summary: 'List projects',
     description:
       'Lists every project in the workspace with its client and status.',
-    permission: 'projects:read',
+    permission: 'gatehouse:projects:read',
     tier: 'read',
     pathParams: [],
     run: {kind: 'query', ref: internal.workspace.projects.listProjects}
@@ -48,7 +49,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/projects/{slug}',
     summary: 'Get a project',
     description: 'Gets one project with its documents and invoices.',
-    permission: 'projects:read',
+    permission: 'gatehouse:projects:read',
     tier: 'read',
     pathParams: ['slug'],
     run: {kind: 'query', ref: internal.workspace.projects.getProject}
@@ -60,7 +61,7 @@ export const operations: readonly Operation[] = [
     summary: 'Archive a project',
     description:
       'Marks a project as archived. Archiving keeps all data and can be undone.',
-    permission: 'projects:write',
+    permission: 'gatehouse:projects:write',
     tier: 'write',
     pathParams: ['slug'],
     body: {required: ['reason'], properties: {reason}},
@@ -73,7 +74,7 @@ export const operations: readonly Operation[] = [
     summary: 'Delete a project',
     description:
       'Deletes a project and all its documents, invoices and refunds. This cannot be undone.',
-    permission: 'projects:delete',
+    permission: 'gatehouse:projects:delete',
     tier: 'destructive',
     pathParams: ['slug'],
     body: {required: ['reason'], properties: {reason}},
@@ -86,7 +87,7 @@ export const operations: readonly Operation[] = [
     summary: 'List documents',
     description:
       'Lists document ids, titles and projects. Use getDocument to read a body.',
-    permission: 'docs:read',
+    permission: 'gatehouse:docs:read',
     tier: 'read',
     pathParams: [],
     run: {kind: 'query', ref: internal.workspace.documents.listDocuments}
@@ -97,7 +98,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/documents/{documentId}',
     summary: 'Read a document',
     description: 'Returns the full title and body of one document.',
-    permission: 'docs:read',
+    permission: 'gatehouse:docs:read',
     tier: 'read',
     pathParams: ['documentId'],
     run: {kind: 'query', ref: internal.workspace.documents.getDocument}
@@ -108,7 +109,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/documents',
     summary: 'Create a document',
     description: 'Creates a document, optionally inside a project.',
-    permission: 'docs:write',
+    permission: 'gatehouse:docs:write',
     tier: 'write',
     pathParams: [],
     body: {
@@ -128,7 +129,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/documents/{documentId}',
     summary: 'Replace a document body',
     description: 'Replaces the body of one document. The old body is not kept.',
-    permission: 'docs:write',
+    permission: 'gatehouse:docs:write',
     tier: 'write',
     pathParams: ['documentId'],
     body: {
@@ -143,7 +144,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/invoices',
     summary: 'List invoices',
     description: 'Lists invoices with project, customer, amount and status.',
-    permission: 'invoices:read',
+    permission: 'gatehouse:invoices:read',
     tier: 'read',
     pathParams: [],
     run: {kind: 'query', ref: internal.workspace.invoices.listInvoices}
@@ -155,7 +156,7 @@ export const operations: readonly Operation[] = [
     summary: 'Refund an invoice',
     description:
       'Refunds part or all of a paid invoice. Money leaves the business.',
-    permission: 'refunds:create',
+    permission: 'gatehouse:refunds:create',
     tier: 'money',
     pathParams: [],
     body: {
@@ -174,7 +175,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/members',
     summary: 'List members',
     description: 'Lists workspace members and their roles.',
-    permission: 'members:read',
+    permission: 'gatehouse:members:read',
     tier: 'read',
     pathParams: [],
     run: {kind: 'query', ref: internal.workspace.members.listMembers}
@@ -185,7 +186,7 @@ export const operations: readonly Operation[] = [
     path: '/api/v1/members',
     summary: 'Invite a member',
     description: 'Gives a person access to the workspace with a role.',
-    permission: 'members:manage',
+    permission: 'gatehouse:members:manage',
     tier: 'access',
     pathParams: [],
     body: {
@@ -206,7 +207,7 @@ export const operations: readonly Operation[] = [
     summary: 'Remove a member',
     description:
       'Removes a person from the workspace. They lose access at once.',
-    permission: 'members:manage',
+    permission: 'gatehouse:members:manage',
     tier: 'access',
     pathParams: ['email'],
     body: {required: ['reason'], properties: {reason}},
@@ -219,7 +220,8 @@ export const operations: readonly Operation[] = [
     summary: 'Export customer records',
     description:
       'Sends customer names, emails and companies to a destination URL. In this demo the export is recorded but no data leaves the app.',
-    permission: 'customers:export',
+    permission: 'gatehouse:customers:export',
+    flag: 'bulk_export',
     tier: 'exfil',
     pathParams: [],
     body: {
