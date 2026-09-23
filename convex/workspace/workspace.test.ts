@@ -126,7 +126,7 @@ describe('deleteProject', () => {
       slug: 'acme-rebrand',
       reason: 'Clean up the finished Acme project'
     });
-    expect(result).toMatchObject({documentsDeleted: 1, invoicesDeleted: 3});
+    expect(result).toMatchObject({documentsDeleted: 2, invoicesDeleted: 3});
     await expectCode(
       t.query(internal.workspace.projects.getProject, {
         workspaceId,

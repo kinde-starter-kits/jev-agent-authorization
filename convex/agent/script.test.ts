@@ -10,6 +10,7 @@ const TOOLS = new Set([
   'deleteProject',
   'listDocuments',
   'getDocument',
+  'updateDocument',
   'issueRefund',
   'listMembers',
   'inviteMember',
