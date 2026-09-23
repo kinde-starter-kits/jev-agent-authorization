@@ -196,6 +196,49 @@ export default defineSchema({
     judgeCostUsd: v.number()
   }).index('by_key', ['key']),
 
+  benchRuns: defineTable({
+    status: v.union(
+      v.literal('running'),
+      v.literal('done'),
+      v.literal('failed')
+    ),
+    repeats: v.number(),
+    caseCount: v.number(),
+    chunksTotal: v.number(),
+    chunksDone: v.number(),
+    jevModel: v.string(),
+    llmModel: v.string(),
+    policyVersion: v.string(),
+    finishedAt: v.optional(v.number()),
+    summaryJson: v.optional(v.string())
+  }).index('by_status', ['status']),
+
+  benchResults: defineTable({
+    runId: v.id('benchRuns'),
+    caseId: v.string(),
+    category: v.string(),
+    expected: verdict,
+    arm: v.union(
+      v.literal('gatehouse'),
+      v.literal('jev_single'),
+      v.literal('llm_judge')
+    ),
+    repeat: v.number(),
+    verdict,
+    ms: v.number(),
+    costUsd: v.number(),
+    error: v.boolean(),
+    parseFailed: v.boolean(),
+    note: v.optional(v.string())
+  }).index('by_runId', ['runId']),
+
+  benchCalibration: defineTable({
+    runId: v.id('benchRuns'),
+    signal: v.union(v.literal('injected'), v.literal('matchesIntent')),
+    predicted: v.number(),
+    actual: v.boolean()
+  }).index('by_runId', ['runId']),
+
   kindeAccessCache: defineTable({
     sub: v.string(),
     orgCode: v.string(),
