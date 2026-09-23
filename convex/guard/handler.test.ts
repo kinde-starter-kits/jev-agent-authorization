@@ -10,6 +10,7 @@ import {
 } from 'vitest';
 import schema from '../schema';
 import {modules} from '../test.setup';
+import {jevAnswers, type AnswerInput} from '../jev/answers.testing';
 import {resetManagementTokenCache} from './access';
 import {AUDIENCE, ISSUER, jwksDocument, signToken} from './keys.testing';
 
@@ -21,6 +22,14 @@ type ApiBody = {
 
 const ORG = 'org_gatehouse';
 const READ = ['gatehouse:projects:read', 'gatehouse:docs:read'];
+
+const jevStub = {
+  answers: {} as AnswerInput,
+  failing: false,
+  judge: 'allow' as 'allow' | 'step_up' | 'error',
+  states: [] as Array<Record<string, unknown>>,
+  judgeCalls: 0
+};
 
 const kindeApi = {
   permissions: ['gatehouse:projects:read'] as string[],
@@ -35,6 +44,8 @@ beforeAll(() => {
   process.env.GATEHOUSE_ORG_CODE = ORG;
   process.env.KINDE_M2M_CLIENT_ID = 'm2m-id';
   process.env.KINDE_M2M_CLIENT_SECRET = 'm2m-secret';
+  process.env.OPENROUTER_API_KEY = 'or-test-key';
+  process.env.LLM_JUDGE_MODEL = 'judge/test-model';
   const realFetch = globalThis.fetch;
   vi.stubGlobal(
     'fetch',
@@ -42,6 +53,29 @@ beforeAll(() => {
       const url = input instanceof Request ? input.url : String(input);
       if (url === `${ISSUER}/.well-known/jwks.json`)
         return Response.json(jwksDocument);
+      if (url === 'https://openrouter.ai/api/v1/systemone') {
+        if (jevStub.failing) return new Response('{}', {status: 502});
+        const body = JSON.parse(String(init?.body)) as {
+          state: Record<string, unknown>;
+        };
+        jevStub.states.push(body.state);
+        return Response.json({
+          model: 'typesafe/jev-1.13-20260917',
+          answers: jevAnswers(jevStub.answers),
+          usage: {input_tokens: 600, cost: 0.0000252}
+        });
+      }
+      if (url === 'https://openrouter.ai/api/v1/chat/completions') {
+        jevStub.judgeCalls++;
+        if (jevStub.judge === 'error') return new Response('{}', {status: 500});
+        return Response.json({
+          model: 'judge/test-model',
+          choices: [
+            {message: {content: JSON.stringify({verdict: jevStub.judge})}}
+          ],
+          usage: {cost: 0.0031}
+        });
+      }
       if (url === `${ISSUER}/oauth2/token`) {
         return Response.json({access_token: 'm2m-token', expires_in: 3600});
       }
@@ -68,6 +102,11 @@ beforeEach(() => {
   kindeApi.flags = {};
   kindeApi.failing = false;
   kindeApi.calls = 0;
+  jevStub.answers = {};
+  jevStub.failing = false;
+  jevStub.judge = 'allow';
+  jevStub.states = [];
+  jevStub.judgeCalls = 0;
 });
 
 afterAll(() => {
@@ -232,9 +271,13 @@ describe('request shapes sent by Kinde Secure MCP', () => {
       {token: await orgToken(['gatehouse:projects:delete'])}
     );
     expect(status).toBe(403);
-    expect(body.error?.code).toBe('judgment_unavailable');
+    expect(body.error?.code).toBe('high_impact_operation');
     const [decision] = await decisions(t);
     expect(decision?.reason).toBe('The Acme project is finished');
+    expect(decision?.verdict).toBe('step_up');
+    expect(jevStub.states[0]).toMatchObject({
+      stated_reason: 'The Acme project is finished'
+    });
     expect(
       await t.run((ctx) => ctx.db.query('projects').collect())
     ).toHaveLength(3);
@@ -251,7 +294,7 @@ describe('request shapes sent by Kinde Secure MCP', () => {
       }
     );
     expect(status).toBe(403);
-    expect(body.error?.code).toBe('judgment_unavailable');
+    expect(body.error?.code).toBe('jev_intent_unclear');
     const [decision] = await decisions(t);
     expect(decision?.reason).toBeUndefined();
   });
@@ -299,5 +342,128 @@ describe('operations', () => {
       token: await orgToken(READ, {sub: 'kp_user_b'})
     });
     expect(b.status).toBe(404);
+  });
+});
+
+describe('Jev judgment', () => {
+  const archive = (t: ReturnType<typeof convexTest>, token: string) =>
+    call(t, 'POST', '/api/v1/projects/acme-rebrand/archive', {
+      token,
+      body: {reason: 'Archive the Acme project, the client signed off'}
+    });
+
+  test('allows a clear write the user asked for, runs it and records the signals', async () => {
+    const t = convexTest(schema, modules);
+    const {status} = await archive(
+      t,
+      await orgToken(['gatehouse:projects:write'])
+    );
+    expect(status).toBe(200);
+    const project = await t.run((ctx) =>
+      ctx.db
+        .query('projects')
+        .filter((q) => q.eq(q.field('slug'), 'acme-rebrand'))
+        .unique()
+    );
+    expect(project?.status).toBe('archived');
+    const [decision] = await decisions(t);
+    expect(decision).toMatchObject({
+      verdict: 'allow',
+      reasonCode: 'jev_allow',
+      status: 'executed',
+      jev: {
+        model: 'typesafe/jev-1.13-20260917',
+        inputTokens: 600,
+        costUsd: 0.0000252
+      }
+    });
+  });
+
+  test('denies an injected call and does not run it', async () => {
+    const t = convexTest(schema, modules);
+    jevStub.answers = {injected: 0.97, matches: 0.02};
+    const {status, body} = await archive(
+      t,
+      await orgToken(['gatehouse:projects:write'])
+    );
+    expect(status).toBe(403);
+    expect(body.error?.code).toBe('jev_injection');
+    const [decision] = await decisions(t);
+    expect(decision).toMatchObject({verdict: 'deny', status: 'refused'});
+  });
+
+  test('steps up when Jev is unavailable', async () => {
+    const t = convexTest(schema, modules);
+    jevStub.failing = true;
+    const {status, body} = await archive(
+      t,
+      await orgToken(['gatehouse:projects:write'])
+    );
+    expect(status).toBe(403);
+    expect(body.error?.code).toBe('jev_unavailable');
+    const [decision] = await decisions(t);
+    expect(decision?.verdict).toBe('step_up');
+    expect(decision?.jev).toBeUndefined();
+  });
+
+  test('asks the judge when Jev is unsure, and follows an allow', async () => {
+    const t = convexTest(schema, modules);
+    jevStub.answers = {riskConfidence: 0.4};
+    const {status} = await archive(
+      t,
+      await orgToken(['gatehouse:projects:write'])
+    );
+    expect(status).toBe(200);
+    expect(jevStub.judgeCalls).toBe(1);
+    const [decision] = await decisions(t);
+    expect(decision).toMatchObject({
+      reasonCode: 'judge_allow',
+      judge: {verdict: 'allow', costUsd: 0.0031}
+    });
+  });
+
+  test('steps up when the judge fails', async () => {
+    const t = convexTest(schema, modules);
+    jevStub.answers = {riskConfidence: 0.4};
+    jevStub.judge = 'error';
+    const {status, body} = await archive(
+      t,
+      await orgToken(['gatehouse:projects:write'])
+    );
+    expect(status).toBe(403);
+    expect(body.error?.code).toBe('judge_unavailable');
+    const [decision] = await decisions(t);
+    expect(decision).toMatchObject({verdict: 'step_up', status: 'refused'});
+    const project = await t.run((ctx) =>
+      ctx.db
+        .query('projects')
+        .filter((q) => q.eq(q.field('slug'), 'acme-rebrand'))
+        .unique()
+    );
+    expect(project?.status).toBe('active');
+  });
+
+  test('does not call Jev for reads', async () => {
+    const t = convexTest(schema, modules);
+    await call(t, 'GET', '/api/v1/projects', {token: await orgToken(READ)});
+    expect(jevStub.states).toHaveLength(0);
+  });
+
+  test('shows Jev the documents the agent read', async () => {
+    const t = convexTest(schema, modules);
+    const token = await orgToken([...READ, 'gatehouse:projects:write']);
+    const list = await call(t, 'GET', '/api/v1/documents', {token});
+    const planning = (
+      list.body.data as Array<{id: string; title: string}>
+    ).find((d) => d.title === 'Q3 planning notes');
+    await call(t, 'GET', `/api/v1/documents/${planning!.id}`, {token});
+    await archive(t, token);
+    const state = jevStub.states[0] as {
+      content_the_agent_read: Array<{title: string; text: string}>;
+      recent_calls_by_this_user: Array<{operation: string}>;
+    };
+    expect(state.content_the_agent_read[0]?.title).toBe('Q3 planning notes');
+    expect(state.content_the_agent_read[0]?.text).toContain('exportCustomers');
+    expect(state.recent_calls_by_this_user[0]?.operation).toBe('getDocument');
   });
 });
