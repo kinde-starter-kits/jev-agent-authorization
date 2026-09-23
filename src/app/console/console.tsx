@@ -3,7 +3,7 @@
 import {useAction, useConvexAuth, useQuery} from 'convex/react';
 import {useState, type FormEvent} from 'react';
 import {api} from '../../../convex/_generated/api';
-import {useSessionToken} from './convex-provider';
+import {useSessionToken} from '@/components/convex-provider';
 
 const EXAMPLES = [
   'List my projects and their status.',

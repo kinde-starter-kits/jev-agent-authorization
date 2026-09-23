@@ -2,7 +2,7 @@ import {LoginLink} from '@kinde-oss/kinde-auth-nextjs/components';
 import {getKindeServerSession} from '@kinde-oss/kinde-auth-nextjs/server';
 import type {Metadata} from 'next';
 import {Console} from './console';
-import {ConvexWithKinde} from './convex-provider';
+import {ConvexWithKinde} from '@/components/convex-provider';
 
 export const metadata: Metadata = {title: 'Agent console · Jev Gatehouse'};
 
