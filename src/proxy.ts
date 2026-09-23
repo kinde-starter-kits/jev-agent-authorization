@@ -1,7 +1,7 @@
 import {withAuth} from '@kinde-oss/kinde-auth-nextjs/middleware';
 
 export default withAuth(async function proxy() {}, {
-  publicPaths: ['/']
+  publicPaths: ['/', '/approve/']
 });
 
 export const config = {
