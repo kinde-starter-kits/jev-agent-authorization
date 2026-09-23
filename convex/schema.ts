@@ -17,7 +17,18 @@ export const decisionStatus = v.union(
   v.literal('pending'),
   v.literal('executed'),
   v.literal('failed'),
-  v.literal('refused')
+  v.literal('refused'),
+  v.literal('held'),
+  v.literal('denied'),
+  v.literal('expired')
+);
+
+export const heldStatus = v.union(
+  v.literal('pending'),
+  v.literal('executed'),
+  v.literal('failed'),
+  v.literal('denied'),
+  v.literal('expired')
 );
 
 export const tier = v.union(
@@ -179,5 +190,20 @@ export default defineSchema({
     source: v.string(),
     title: v.string(),
     excerpt: v.string()
-  }).index('by_sub', ['sub'])
+  }).index('by_sub', ['sub']),
+
+  heldCalls: defineTable({
+    decisionId: v.id('decisions'),
+    sub: v.string(),
+    workspaceId: v.id('workspaces'),
+    operationId: v.string(),
+    argsJson: v.string(),
+    status: heldStatus,
+    expiresAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+    authAgeSeconds: v.optional(v.number()),
+    errorCode: v.optional(v.string())
+  })
+    .index('by_decisionId', ['decisionId'])
+    .index('by_status_and_expiresAt', ['status', 'expiresAt'])
 });

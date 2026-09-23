@@ -10,6 +10,8 @@ import {
 } from './schema';
 import {seedWorkspace} from './seed';
 
+export const HOLD_TTL_MS = 10 * 60 * 1000;
+
 export const begin = internalMutation({
   args: {
     sub: v.string(),
@@ -26,13 +28,17 @@ export const begin = internalMutation({
     verdict,
     reasonCode: v.string(),
     policyVersion: v.string(),
-    guardMs: v.number()
+    guardMs: v.number(),
+    holdArgsJson: v.optional(v.string())
   },
   returns: v.object({
     decisionId: v.id('decisions'),
-    workspaceId: v.id('workspaces')
+    workspaceId: v.id('workspaces'),
+    held: v.optional(
+      v.object({heldCallId: v.id('heldCalls'), expiresAt: v.number()})
+    )
   }),
-  handler: async (ctx, {guardMs, ...decision}) => {
+  handler: async (ctx, {guardMs, holdArgsJson, ...decision}) => {
     const existing = await ctx.db
       .query('workspaces')
       .withIndex('by_ownerSub', (q) => q.eq('ownerSub', decision.sub))
@@ -42,10 +48,28 @@ export const begin = internalMutation({
     const decisionId = await ctx.db.insert('decisions', {
       ...decision,
       workspaceId,
-      status: decision.verdict === 'allow' ? 'pending' : 'refused',
+      status:
+        decision.verdict === 'allow'
+          ? 'pending'
+          : decision.verdict === 'step_up' && holdArgsJson !== undefined
+            ? 'held'
+            : 'refused',
       latency: {guardMs}
     });
-    return {decisionId, workspaceId};
+    if (decision.verdict !== 'step_up' || holdArgsJson === undefined) {
+      return {decisionId, workspaceId};
+    }
+    const expiresAt = Date.now() + HOLD_TTL_MS;
+    const heldCallId = await ctx.db.insert('heldCalls', {
+      decisionId,
+      sub: decision.sub,
+      workspaceId,
+      operationId: decision.operationId,
+      argsJson: holdArgsJson,
+      status: 'pending',
+      expiresAt
+    });
+    return {decisionId, workspaceId, held: {heldCallId, expiresAt}};
   }
 });
 
