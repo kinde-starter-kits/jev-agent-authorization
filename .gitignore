@@ -23,3 +23,28 @@ coverage/
 
 # ---------------------------------------------------------------------
 # Add specific rules here…
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Convex
+.convex/
+
+# Vercel
+.vercel/
+
+# Environment
+.env
+.env*.local
+
+# Internal build notes (never committed)
+BUILD_PLAN.md
+BUILD_LOG.md
+FINDINGS.md
+CLAUDE.md
+AGENTS.md
+scripts/jev-smoke.mjs
+smoke-results.json
