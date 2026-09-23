@@ -1,1 +1,83 @@
 @import 'tailwindcss';
+
+:root {
+  --paper: #f7f6f2;
+  --card: #ffffff;
+  --ink: #16161a;
+  --muted: #5f5f68;
+  --faint: #8d8d96;
+  --line: #e4e2dc;
+  --track: #eeece6;
+  --accent: #3b3bd6;
+  --allow: #117a46;
+  --allow-soft: #e6f4ec;
+  --stepup: #9a5b00;
+  --stepup-soft: #fbf0dc;
+  --deny: #b42318;
+  --deny-soft: #fbe9e7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f0f12;
+    --card: #17171b;
+    --ink: #ededf0;
+    --muted: #a3a3ad;
+    --faint: #74747e;
+    --line: #2a2a31;
+    --track: #24242a;
+    --accent: #8f8fff;
+    --allow: #4cc38a;
+    --allow-soft: #12291e;
+    --stepup: #f0b453;
+    --stepup-soft: #2e2413;
+    --deny: #f47067;
+    --deny-soft: #321716;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-track: var(--track);
+  --color-accent: var(--accent);
+  --color-allow: var(--allow);
+  --color-allow-soft: var(--allow-soft);
+  --color-stepup: var(--stepup);
+  --color-stepup-soft: var(--stepup-soft);
+  --color-deny: var(--deny);
+  --color-deny-soft: var(--deny-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes ledger-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ledger-in {
+  animation: ledger-in 320ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger-in {
+    animation: none;
+  }
+}
