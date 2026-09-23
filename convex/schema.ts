@@ -29,6 +29,15 @@ export const tier = v.union(
   v.literal('exfil')
 );
 
+export const kindeCheck = v.object({
+  orgCode: v.optional(v.string()),
+  source: v.optional(v.union(v.literal('token'), v.literal('kinde_api'))),
+  permission: v.string(),
+  permissionGranted: v.boolean(),
+  flag: v.optional(v.string()),
+  flagEnabled: v.optional(v.boolean())
+});
+
 export default defineSchema({
   workspaces: defineTable({
     ownerSub: v.string(),
@@ -118,12 +127,8 @@ export default defineSchema({
     method: v.string(),
     path: v.string(),
     argsJson: v.string(),
-    kinde: v.object({
-      permission: v.string(),
-      permissionGranted: v.boolean(),
-      flag: v.optional(v.string()),
-      flagEnabled: v.optional(v.boolean())
-    }),
+    kinde: kindeCheck,
+    reason: v.optional(v.string()),
     verdict,
     reasonCode: v.string(),
     policyVersion: v.string(),
@@ -135,5 +140,13 @@ export default defineSchema({
     })
   })
     .index('by_workspaceId', ['workspaceId'])
-    .index('by_sub', ['sub'])
+    .index('by_sub', ['sub']),
+
+  kindeAccessCache: defineTable({
+    sub: v.string(),
+    orgCode: v.string(),
+    permissions: v.array(v.string()),
+    featureFlags: v.record(v.string(), v.boolean()),
+    expiresAt: v.number()
+  }).index('by_sub_and_orgCode', ['sub', 'orgCode'])
 });
