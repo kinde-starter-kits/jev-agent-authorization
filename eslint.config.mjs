@@ -15,6 +15,8 @@ export default defineConfig([
     'coverage/**',
     'convex/_generated/**',
     'next-env.d.ts',
-    'scripts/jev-smoke.mjs'
+    'scripts/jev-smoke.mjs',
+    '.agents/**',
+    '.claude/**'
   ])
 ]);

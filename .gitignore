@@ -47,4 +47,8 @@ FINDINGS.md
 CLAUDE.md
 AGENTS.md
 scripts/jev-smoke.mjs
+.agents/
+.claude/
+skills-lock.json
+convex/_generated/ai/
 smoke-results.json
