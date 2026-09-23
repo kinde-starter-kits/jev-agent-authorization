@@ -62,6 +62,7 @@
   --color-series-3: var(--series-3);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-display-face), var(--font-geist-sans), sans-serif;
 }
 
 body {
@@ -85,8 +86,55 @@ body {
   animation: ledger-in 320ms ease-out;
 }
 
+/* A verdict is stamped, like a passport at a border gate. */
+@keyframes stamp-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(1.6);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+.stamp {
+  transform: rotate(-8deg);
+}
+
+.stamp-in {
+  animation: stamp-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes gate-pass {
+  from {
+    background-position: -120% 0;
+  }
+  to {
+    background-position: 220% 0;
+  }
+}
+
+.gate-pass {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--accent) 22%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: gate-pass 900ms ease-out 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ledger-in {
+  .ledger-in,
+  .stamp-in,
+  .gate-pass {
     animation: none;
   }
 }

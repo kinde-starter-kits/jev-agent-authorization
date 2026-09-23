@@ -46,48 +46,44 @@ export function StatsCard() {
       ? '—'
       : `${Math.round(stats.jevP50Ms)} / ${Math.round(stats.jevP95Ms ?? stats.jevP50Ms)} ms`;
 
+  const stopped = stats.steppedUp + stats.denied;
   return (
-    <section
-      aria-label="Guard stats"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-card p-5"
-    >
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="flex flex-col">
-          <span className="text-sm text-muted">Tool calls checked</span>
-          <span className="font-mono text-4xl font-semibold tabular-nums">
-            {stats.total.toLocaleString()}
-          </span>
-        </div>
-        <span className="text-right text-xs text-faint">
-          Every authenticated call,
-          <br />
-          before it runs
+    <section aria-label="Guard stats" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4 rounded-2xl bg-accent p-5 text-paper">
+        <span className="font-mono text-xs opacity-80">
+          Agent tool calls checked, so far
         </span>
+        <span className="font-display text-6xl leading-none font-extrabold tabular-nums">
+          {stats.total.toLocaleString()}
+        </span>
+        <div
+          className="flex h-2 overflow-hidden rounded-full bg-paper/25"
+          role="img"
+          aria-label={segments.map((s) => `${s.label} ${s.count}`).join(', ')}
+        >
+          {segments.map((s) => (
+            <span
+              key={s.key}
+              className={s.bar}
+              style={{width: `${(s.count / total) * 100}%`}}
+            />
+          ))}
+        </div>
+        <dl className="grid grid-cols-3 gap-3 border-t border-paper/25 pt-3">
+          {segments.map((s) => (
+            <div key={s.key} className="flex flex-col">
+              <dt className="text-xs opacity-80">{s.label}</dt>
+              <dd className="font-display text-2xl font-extrabold tabular-nums">
+                {s.count}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-sm">
+          <span className="font-semibold">{stopped}</span> calls stopped or held
+          before they ran.
+        </p>
       </div>
-
-      <div
-        className="flex h-2 overflow-hidden rounded-full bg-track"
-        role="img"
-        aria-label={segments.map((s) => `${s.label} ${s.count}`).join(', ')}
-      >
-        {segments.map((s) => (
-          <span
-            key={s.key}
-            className={s.bar}
-            style={{width: `${(s.count / total) * 100}%`}}
-          />
-        ))}
-      </div>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-        {segments.map((s) => (
-          <li key={s.key} className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${s.bar}`} />
-            <span className="text-muted">{s.label}</span>
-            <span className="font-mono tabular-nums">{s.count}</span>
-          </li>
-        ))}
-      </ul>
-
       <div className="grid grid-cols-2 gap-3">
         <Tile
           label="Calls Jev judged"

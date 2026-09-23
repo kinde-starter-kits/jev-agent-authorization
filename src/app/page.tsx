@@ -5,62 +5,75 @@ import {StatsCard} from '@/components/stats-card';
 
 const STEPS = [
   {
-    title: 'Kinde',
-    text: 'Checks who the agent acts for, the organization, the permission and the feature flag.'
+    name: 'Kinde',
+    text: 'Signs the user in and passes their token through MCP. The guard reads their organization, permissions and feature flags.'
   },
   {
-    title: 'Jev',
-    text: 'Reads the call, the user request and the content the agent read. Returns calibrated signals in about 200 ms.'
+    name: 'Jev',
+    text: 'Reads the call, the request and what the agent read. Returns typed probabilities in about 200 ms.'
   },
   {
-    title: 'Policy',
-    text: 'Code decides from the signals: allow the call, ask the user to approve it, or stop it.'
+    name: 'Policy',
+    text: 'Code decides from the numbers. The call runs, waits for a fresh sign-in, or stops.'
   }
 ];
 
 export default function Home() {
   return (
     <ConvexWithKinde>
-      <main className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="flex flex-col gap-8 lg:sticky lg:top-10 lg:self-start">
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-medium text-accent">
-              Jev agent authorization
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-10">
+        <section className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <div className="flex flex-col gap-6">
+            <p className="font-mono text-xs text-muted">
+              Jev agent authorization · Kinde + Jev
             </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-balance">
-              Every agent tool call is checked before it runs.
+            <h1 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-7xl">
+              Every agent call stops at the gate.
             </h1>
-            <p className="text-muted">
-              An AI agent calls this workspace through Kinde MCP with the
-              user&apos;s token. The guard checks each call with Kinde and Jev,
-              and writes every decision to this ledger.
+            <p className="max-w-xl text-lg text-muted">
+              Permissions say what a user can do. They do not say what the user
+              asked for. Jev Gatehouse checks both on every tool call, before it
+              runs.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/console"
+                href="/playground"
                 className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-paper"
+              >
+                Try to trick the agent
+              </Link>
+              <Link
+                href="/console"
+                className="rounded-md border border-line px-4 py-2 text-sm font-medium"
               >
                 Open the agent console
               </Link>
+              <Link
+                href="/benchmark"
+                className="rounded-md border border-line px-4 py-2 text-sm font-medium"
+              >
+                See the benchmark
+              </Link>
             </div>
+            <ol className="grid gap-3 sm:grid-cols-3">
+              {STEPS.map((step, index) => (
+                <li
+                  key={step.name}
+                  className="flex flex-col gap-1 border-t-2 border-ink pt-3"
+                >
+                  <span className="font-mono text-[11px] text-faint">
+                    0{index + 1}
+                  </span>
+                  <span className="font-display text-xl font-extrabold">
+                    {step.name}
+                  </span>
+                  <span className="text-sm text-muted">{step.text}</span>
+                </li>
+              ))}
+            </ol>
           </div>
-
-          <ol className="flex flex-col gap-3">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line font-mono text-xs text-muted">
-                  {index + 1}
-                </span>
-                <p className="text-sm">
-                  <span className="font-semibold">{step.title}.</span>{' '}
-                  <span className="text-muted">{step.text}</span>
-                </p>
-              </li>
-            ))}
-          </ol>
-
           <StatsCard />
-        </div>
+        </section>
 
         <LedgerWall />
       </main>

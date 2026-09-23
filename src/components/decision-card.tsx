@@ -1,13 +1,7 @@
 import type {FunctionReturnType} from 'convex/server';
 import type {api} from '../../convex/_generated/api';
-import {
-  formatUsd,
-  percent,
-  reasonLabel,
-  STATUS_LABEL,
-  VERDICT_CLASS,
-  VERDICT_LABEL
-} from '@/lib/labels';
+import {Stamp} from './stamp';
+import {formatUsd, percent, reasonLabel, STATUS_LABEL} from '@/lib/labels';
 
 export type PublicDecision = FunctionReturnType<typeof api.wall.recent>[number];
 
@@ -132,11 +126,7 @@ export function DecisionCard({decision}: {decision: PublicDecision}) {
       )}
 
       <footer className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${VERDICT_CLASS[decision.verdict]}`}
-        >
-          {VERDICT_LABEL[decision.verdict]}
-        </span>
+        <Stamp verdict={decision.verdict} />
         <span className="text-sm">{reasonLabel(decision.reasonCode)}</span>
         <span className="text-xs text-faint">
           {STATUS_LABEL[decision.status] ?? decision.status}
