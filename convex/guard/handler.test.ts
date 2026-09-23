@@ -46,6 +46,7 @@ beforeAll(() => {
   process.env.KINDE_M2M_CLIENT_SECRET = 'm2m-secret';
   process.env.OPENROUTER_API_KEY = 'or-test-key';
   process.env.LLM_JUDGE_MODEL = 'judge/test-model';
+  process.env.KINDE_WEB_CLIENT_ID = 'web-client';
   const realFetch = globalThis.fetch;
   vi.stubGlobal(
     'fetch',
@@ -465,5 +466,62 @@ describe('Jev judgment', () => {
     expect(state.content_the_agent_read[0]?.title).toBe('Q3 planning notes');
     expect(state.content_the_agent_read[0]?.text).toContain('exportCustomers');
     expect(state.recent_calls_by_this_user[0]?.operation).toBe('getDocument');
+  });
+});
+
+describe('verified intent from the in-app agent', () => {
+  async function startRun(t: ReturnType<typeof convexTest>, message: string) {
+    return t.run((ctx) =>
+      ctx.db.insert('runs', {
+        sub: 'kp_user_a',
+        message,
+        status: 'running',
+        model: 'm',
+        turns: 0,
+        costUsd: 0
+      })
+    );
+  }
+
+  test('shows Jev the user message when the web app token has a running run', async () => {
+    const t = convexTest(schema, modules);
+    await startRun(t, 'Archive the Acme project, the client signed off');
+    const {status} = await call(
+      t,
+      'POST',
+      '/api/v1/projects/acme-rebrand/archive',
+      {
+        token: await orgToken(['gatehouse:projects:write'], {azp: 'web-client'})
+      }
+    );
+    expect(status).toBe(200);
+    expect(jevStub.states[0]).toMatchObject({
+      user_request: {text: 'Archive the Acme project, the client signed off'},
+      stated_reason: null
+    });
+    const [decision] = await decisions(t);
+    expect(decision).toMatchObject({
+      intentSource: 'verified',
+      reasonCode: 'jev_allow'
+    });
+  });
+
+  test('ignores a running run when the token comes from another client', async () => {
+    const t = convexTest(schema, modules);
+    await startRun(t, 'Archive the Acme project');
+    const {body} = await call(
+      t,
+      'POST',
+      '/api/v1/projects/acme-rebrand/archive',
+      {
+        token: await orgToken(['gatehouse:projects:write'], {
+          azp: 'someone-else'
+        })
+      }
+    );
+    expect(body.error?.code).toBe('jev_intent_unclear');
+    const [decision] = await decisions(t);
+    expect(decision?.intentSource).toBe('none');
+    expect(jevStub.states[0]).toMatchObject({user_request: null});
   });
 });
