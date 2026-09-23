@@ -1,6 +1,13 @@
 import {v} from 'convex/values';
 import {internalMutation} from './_generated/server';
-import {decisionStatus, kindeCheck, tier, verdict} from './schema';
+import {
+  decisionStatus,
+  jevRecord,
+  judgeRecord,
+  kindeCheck,
+  tier,
+  verdict
+} from './schema';
 import {seedWorkspace} from './seed';
 
 export const begin = internalMutation({
@@ -14,6 +21,8 @@ export const begin = internalMutation({
     argsJson: v.string(),
     kinde: kindeCheck,
     reason: v.optional(v.string()),
+    jev: v.optional(jevRecord),
+    judge: v.optional(judgeRecord),
     verdict,
     reasonCode: v.string(),
     policyVersion: v.string(),

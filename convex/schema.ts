@@ -38,6 +38,28 @@ export const kindeCheck = v.object({
   flagEnabled: v.optional(v.boolean())
 });
 
+export const jevRecord = v.object({
+  model: v.string(),
+  ms: v.number(),
+  inputTokens: v.number(),
+  costUsd: v.optional(v.number()),
+  matchesIntent: v.number(),
+  destructive: v.number(),
+  injected: v.number(),
+  exfiltration: v.number(),
+  risk: v.number(),
+  riskConfidence: v.number(),
+  verdictHint: verdict,
+  verdictHintConfidence: v.number()
+});
+
+export const judgeRecord = v.object({
+  model: v.string(),
+  ms: v.number(),
+  verdict,
+  costUsd: v.optional(v.number())
+});
+
 export default defineSchema({
   workspaces: defineTable({
     ownerSub: v.string(),
@@ -129,6 +151,8 @@ export default defineSchema({
     argsJson: v.string(),
     kinde: kindeCheck,
     reason: v.optional(v.string()),
+    jev: v.optional(jevRecord),
+    judge: v.optional(judgeRecord),
     verdict,
     reasonCode: v.string(),
     policyVersion: v.string(),
@@ -148,5 +172,12 @@ export default defineSchema({
     permissions: v.array(v.string()),
     featureFlags: v.record(v.string(), v.boolean()),
     expiresAt: v.number()
-  }).index('by_sub_and_orgCode', ['sub', 'orgCode'])
+  }).index('by_sub_and_orgCode', ['sub', 'orgCode']),
+
+  servedContent: defineTable({
+    sub: v.string(),
+    source: v.string(),
+    title: v.string(),
+    excerpt: v.string()
+  }).index('by_sub', ['sub'])
 });
