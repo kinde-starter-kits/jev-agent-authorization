@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@kinde-oss/kinde-auth-nextjs": "^2.13.1",
+    "convex": "^1.46.0",
     "next": "16.3.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
