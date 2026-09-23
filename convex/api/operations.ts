@@ -24,11 +24,10 @@ export type Operation = {
   run: Runner;
 };
 
-const reason: JsonSchema = {
-  type: 'string',
-  minLength: 3,
-  description: "The user's request that led to this call, in their words."
-};
+export const REASON_DESCRIPTION =
+  "The user's request that led to this call, in their words. The guard treats a missing reason as no stated intent.";
+
+const reason: JsonSchema = {type: 'string', description: REASON_DESCRIPTION};
 
 export const operations: readonly Operation[] = [
   {
@@ -64,7 +63,7 @@ export const operations: readonly Operation[] = [
     permission: 'gatehouse:projects:write',
     tier: 'write',
     pathParams: ['slug'],
-    body: {required: ['reason'], properties: {reason}},
+    body: {required: [], properties: {reason}},
     run: {kind: 'mutation', ref: internal.workspace.projects.archiveProject}
   },
   {
@@ -77,7 +76,6 @@ export const operations: readonly Operation[] = [
     permission: 'gatehouse:projects:delete',
     tier: 'destructive',
     pathParams: ['slug'],
-    body: {required: ['reason'], properties: {reason}},
     run: {kind: 'mutation', ref: internal.workspace.projects.deleteProject}
   },
   {
@@ -113,7 +111,7 @@ export const operations: readonly Operation[] = [
     tier: 'write',
     pathParams: [],
     body: {
-      required: ['title', 'body', 'reason'],
+      required: ['title', 'body'],
       properties: {
         title: {type: 'string', minLength: 1, maxLength: 200},
         body: {type: 'string', maxLength: 20000},
@@ -133,7 +131,7 @@ export const operations: readonly Operation[] = [
     tier: 'write',
     pathParams: ['documentId'],
     body: {
-      required: ['body', 'reason'],
+      required: ['body'],
       properties: {body: {type: 'string', maxLength: 20000}, reason}
     },
     run: {kind: 'mutation', ref: internal.workspace.documents.updateDocument}
@@ -160,7 +158,7 @@ export const operations: readonly Operation[] = [
     tier: 'money',
     pathParams: [],
     body: {
-      required: ['invoiceNumber', 'amountCents', 'reason'],
+      required: ['invoiceNumber', 'amountCents'],
       properties: {
         invoiceNumber: {type: 'string'},
         amountCents: {type: 'integer', minimum: 1},
@@ -190,7 +188,7 @@ export const operations: readonly Operation[] = [
     tier: 'access',
     pathParams: [],
     body: {
-      required: ['email', 'name', 'role', 'reason'],
+      required: ['email', 'name', 'role'],
       properties: {
         email: {type: 'string', format: 'email'},
         name: {type: 'string', minLength: 1},
@@ -210,7 +208,6 @@ export const operations: readonly Operation[] = [
     permission: 'gatehouse:members:manage',
     tier: 'access',
     pathParams: ['email'],
-    body: {required: ['reason'], properties: {reason}},
     run: {kind: 'mutation', ref: internal.workspace.members.removeMember}
   },
   {
@@ -225,7 +222,7 @@ export const operations: readonly Operation[] = [
     tier: 'exfil',
     pathParams: [],
     body: {
-      required: ['destination', 'scope', 'reason'],
+      required: ['destination', 'scope'],
       properties: {
         destination: {type: 'string', format: 'uri'},
         scope: {type: 'string', enum: ['all', 'company']},
@@ -236,6 +233,11 @@ export const operations: readonly Operation[] = [
     run: {kind: 'mutation', ref: internal.workspace.customers.exportCustomers}
   }
 ];
+
+export function reasonLocation(operation: Operation) {
+  if (operation.method === 'GET') return null;
+  return operation.method === 'DELETE' ? 'query' : 'body';
+}
 
 export const API_PREFIX = '/api/v1/';
 

@@ -1,4 +1,4 @@
-import {operations} from './operations';
+import {operations, REASON_DESCRIPTION, reasonLocation} from './operations';
 
 const errorResponse = {
   description: 'Error',
@@ -41,14 +41,22 @@ export function buildOpenApi(serverUrl: string) {
         '409': errorResponse
       }
     };
-    if (op.pathParams.length > 0) {
-      entry.parameters = op.pathParams.map((name) => ({
-        name,
-        in: 'path',
-        required: true,
+    const parameters: Record<string, unknown>[] = op.pathParams.map((name) => ({
+      name,
+      in: 'path',
+      required: true,
+      schema: {type: 'string'}
+    }));
+    if (reasonLocation(op) === 'query') {
+      parameters.push({
+        name: 'reason',
+        in: 'query',
+        required: false,
+        description: REASON_DESCRIPTION,
         schema: {type: 'string'}
-      }));
+      });
     }
+    if (parameters.length > 0) entry.parameters = parameters;
     if (op.body) {
       entry.requestBody = {
         required: true,
@@ -57,7 +65,9 @@ export function buildOpenApi(serverUrl: string) {
             schema: {
               type: 'object',
               additionalProperties: false,
-              required: op.body.required,
+              ...(op.body.required.length > 0
+                ? {required: op.body.required}
+                : {}),
               properties: op.body.properties
             }
           }
