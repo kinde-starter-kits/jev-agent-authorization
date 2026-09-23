@@ -104,18 +104,16 @@ describe('issueRefund', () => {
     );
   });
 
-  test('refuses an empty reason', async () => {
+  test('records a refund when no reason is given', async () => {
     const {t, workspaceId} = await setup();
-    await expectCode(
-      t.mutation(internal.workspace.invoices.issueRefund, {
-        ...base,
-        workspaceId,
-        reason: ' ',
-        invoiceNumber: 'INV-1042',
-        amountCents: 100
-      }),
-      'invalid_argument'
-    );
+    await t.mutation(internal.workspace.invoices.issueRefund, {
+      workspaceId,
+      actorSub: 'user-a',
+      invoiceNumber: 'INV-1042',
+      amountCents: 100
+    });
+    const [refund] = await t.run((ctx) => ctx.db.query('refunds').collect());
+    expect(refund?.reason).toBe('');
   });
 });
 
