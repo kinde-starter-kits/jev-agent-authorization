@@ -4,6 +4,8 @@ import {useAction, useConvexAuth, useQuery} from 'convex/react';
 import {useState} from 'react';
 import {api} from '../../../convex/_generated/api';
 import {useSessionToken} from '@/components/convex-provider';
+import {SessionNotice} from '@/components/session-notice';
+import {isSessionError, userMessage} from '@/lib/errors';
 import {RunView} from '@/components/run-view';
 import {VERDICT_CLASS, VERDICT_LABEL} from '@/lib/labels';
 
@@ -23,12 +25,12 @@ export function Playground() {
     setRunning(scenarioId);
     try {
       const accessToken = await refresh();
-      if (!accessToken) throw new Error('Sign in again to run a scenario.');
+      // No token: the session notice asks the user to sign in again.
+      if (!accessToken) return;
       await runScenario({scenarioId, accessToken});
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'The scenario did not start.'
-      );
+      if (isSessionError(err)) await refresh();
+      setError(userMessage(err, 'The scenario did not start.'));
     } finally {
       setRunning(null);
     }
@@ -36,6 +38,7 @@ export function Playground() {
 
   return (
     <div className="flex flex-col gap-8">
+      <SessionNotice returnTo="/playground" />
       {scenarios === undefined ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {[0, 1, 2, 3].map((key) => (

@@ -4,6 +4,8 @@ import {useAction, useConvexAuth, useQuery} from 'convex/react';
 import {useState, type FormEvent} from 'react';
 import {api} from '../../../convex/_generated/api';
 import {useSessionToken} from '@/components/convex-provider';
+import {SessionNotice} from '@/components/session-notice';
+import {isSessionError, userMessage} from '@/lib/errors';
 import {RunView} from '@/components/run-view';
 
 const EXAMPLES = [
@@ -33,10 +35,12 @@ export function Console() {
     setMessage('');
     try {
       const accessToken = await refresh();
-      if (!accessToken) throw new Error('Sign in again to run the agent.');
+      // No token: the session notice asks the user to sign in again.
+      if (!accessToken) return;
       await start({message: text, accessToken});
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The run did not start.');
+      if (isSessionError(err)) await refresh();
+      setError(userMessage(err, 'The run did not start.'));
     } finally {
       setSending(false);
     }
@@ -44,6 +48,7 @@ export function Console() {
 
   return (
     <div className="flex flex-col gap-8">
+      <SessionNotice returnTo="/console" />
       <form onSubmit={submit} className="flex flex-col gap-3">
         <label htmlFor="message" className="text-sm font-medium">
           Ask the agent
