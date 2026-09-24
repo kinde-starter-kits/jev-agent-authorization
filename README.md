@@ -152,11 +152,43 @@ We wrote the cases and the labels. Run `npm run bench` to measure your own deplo
    cp .env.local.sample .env.local
    ```
 
-5. Start Convex. This creates a deployment and writes `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CONVEX_SITE_URL` to `.env.local`:
+### Set up Convex
+
+Convex runs the guard, the ledger, the workspace API and the benchmark.
+
+1. Start Convex in its own terminal and leave it running. The first run asks you to sign in to Convex and create a project. It then writes `CONVEX_DEPLOYMENT`, `NEXT_PUBLIC_CONVEX_URL` and `NEXT_PUBLIC_CONVEX_SITE_URL` to `.env.local`:
 
    ```bash
    npx convex dev
    ```
+
+2. The first push stops with `KINDE_ISSUER_URL is used in auth config file but its value was not set`. This is expected, because the guard verifies Kinde tokens. Set the variable, then run `npx convex dev` again:
+
+   ```bash
+   npx convex env set KINDE_ISSUER_URL https://<your_kinde_subdomain>.kinde.com
+   ```
+
+3. Note your site URL. It is `NEXT_PUBLIC_CONVEX_SITE_URL` in `.env.local` and looks like `https://<your-deployment>.convex.site`. The workspace API and its OpenAPI spec live there, and the Kinde MCP connection needs it.
+
+### Set up OpenRouter for Jev
+
+The guard calls Jev (`typesafe/jev-1.13`) through the OpenRouter System One endpoint. The same key runs the LLM judge and the in-app agent.
+
+1. Create an [OpenRouter](https://openrouter.ai) account and add credits. A guarded call costs about $0.00007. A full benchmark run costs about $1.
+2. Create an API key in OpenRouter.
+3. Store the key in Convex, because the guard runs there, not in Next.js:
+
+   ```bash
+   npx convex env set OPENROUTER_API_KEY <your_openrouter_key>
+   ```
+
+4. Set the model for the LLM judge:
+
+   ```bash
+   npx convex env set LLM_JUDGE_MODEL anthropic/claude-sonnet-5
+   ```
+
+   Without it, a call that Jev is unsure about is held for approval, and `npm run bench` does not start. `JEV_MODEL` defaults to `typesafe/jev-1.13` and `AGENT_MODEL` defaults to `anthropic/claude-sonnet-5`.
 
 ### Set up Kinde
 
@@ -187,9 +219,9 @@ We wrote the cases and the labels. Run `npm run bench` to measure your own deplo
 
    Do not turn on role-based access control for the MCP sign-in. MCP sign-ins have no organization, so Kinde refuses them. The guard checks organization permissions itself.
 
-### Set Convex environment variables
+### Set the other Convex environment variables
 
-Set these with `npx convex env set NAME value`:
+Set the rest with `npx convex env set NAME value`. The table lists every variable, including the ones from the Convex and OpenRouter steps:
 
 | Variable | Value |
 | --- | --- |
